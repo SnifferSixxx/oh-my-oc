@@ -5,7 +5,7 @@ import {
   fetchLatestVersion,
   getOpenCodeVersion,
   isOpenCodeInstalled,
-  isTmuxInstalled,
+  isZellijInstalled,
 } from './system';
 
 describe('system', () => {
@@ -16,8 +16,8 @@ describe('system', () => {
     expect(typeof result).toBe('boolean');
   });
 
-  test('isTmuxInstalled returns boolean', async () => {
-    const result = await isTmuxInstalled();
+  test('isZellijInstalled returns boolean', async () => {
+    const result = await isZellijInstalled();
     expect(typeof result).toBe('boolean');
   });
 

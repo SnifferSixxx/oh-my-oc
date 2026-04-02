@@ -17,7 +17,7 @@ The `src/config/` module is responsible for:
 - Project config: `<directory>/.opencode/oh-my-opencode-slim.jsonc` (preferred) or `.json`
 - Environment override: `OH_MY_OPENCODE_SLIM_PRESET`
 - Project config takes precedence over user config
-- Nested objects (`agents`, `tmux`, `fallback`) are deep-merged; arrays and primitives are replaced
+- Nested objects (`agents`, `multiplexer`, `fallback`) are deep-merged; arrays and primitives are replaced
 
 **Preset System**
 - Named presets contain agent configuration templates
@@ -44,7 +44,7 @@ PluginConfig
 ├── presets?: Record<string, Preset>
 ├── agents?: Record<string, AgentOverrideConfig>
 ├── disabled_mcps?: string[]
-├── tmux?: TmuxConfig
+├── multiplexer?: MultiplexerConfig
 ├── background?: BackgroundTaskConfig
 └── fallback?: FailoverConfig
 
@@ -55,9 +55,9 @@ AgentOverrideConfig
 ├── skills?: string[]  // "*" = all, "!item" = exclude
 └── mcps?: string[]     // "*" = all, "!item" = exclude
 
-TmuxConfig
-├── enabled: boolean
-├── layout: TmuxLayout
+MultiplexerConfig
+├── type: 'zellij' | 'none'
+├── layout: MultiplexerLayout
 └── main_pane_size: number
 
 FailoverConfig
@@ -76,8 +76,8 @@ FailoverConfig
 **TypeScript Types**
 - `PluginConfig`: Main configuration object
 - `AgentOverrideConfig`: Per-agent configuration overrides
-- `TmuxConfig`: Tmux integration settings
-- `TmuxLayout`: Layout enum (`main-horizontal`, `main-vertical`, `tiled`, `even-horizontal`, `even-vertical`)
+- `MultiplexerConfig`: Zellij integration settings
+- `MultiplexerLayout`: Layout enum retained for config consistency
 - `Preset`: Named agent configuration presets
 - `AgentName`: Union type of all agent names
 - `McpName`: Union type of available MCPs (`'websearch'`, `'context7'`, `'grep_app'`)
@@ -110,7 +110,7 @@ loadPluginConfig(directory)
 │
 ├─→ Deep merge configs (project overrides user)
 │   ├─→ Top-level: project replaces user
-│   └─→ Nested (agents, tmux, fallback): deepMerge()
+│   └─→ Nested (agents, multiplexer, fallback): deepMerge()
 │
 ├─→ Apply environment preset override
 │   └─→ OH_MY_OPENCODE_SLIM_PRESET takes precedence

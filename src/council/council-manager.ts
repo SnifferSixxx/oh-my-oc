@@ -14,7 +14,7 @@ import type { SubagentDepthTracker } from '../background/subagent-depth';
 import type { PluginConfig } from '../config';
 import {
   COUNCILLOR_STAGGER_MS,
-  TMUX_SPAWN_DELAY_MS,
+  MULTIPLEXER_SPAWN_DELAY_MS,
 } from '../config/constants';
 import type {
   CouncilConfig,
@@ -42,19 +42,19 @@ export class CouncilManager {
   private directory: string;
   private config?: PluginConfig;
   private depthTracker?: SubagentDepthTracker;
-  private tmuxEnabled: boolean;
+  private multiplexerEnabled: boolean;
 
   constructor(
     ctx: PluginInput,
     config?: PluginConfig,
     depthTracker?: SubagentDepthTracker,
-    tmuxEnabled = false,
+    multiplexerEnabled = false,
   ) {
     this.client = ctx.client;
     this.directory = ctx.directory;
     this.config = config;
     this.depthTracker = depthTracker;
-    this.tmuxEnabled = tmuxEnabled;
+    this.multiplexerEnabled = multiplexerEnabled;
   }
 
   /**
@@ -281,8 +281,10 @@ export class CouncilManager {
         }
       }
 
-      if (this.tmuxEnabled) {
-        await new Promise((r) => setTimeout(r, TMUX_SPAWN_DELAY_MS));
+      if (this.multiplexerEnabled) {
+        await new Promise((r) =>
+          setTimeout(r, MULTIPLEXER_SPAWN_DELAY_MS),
+        );
       }
 
       const body: PromptBody = {
@@ -367,7 +369,7 @@ export class CouncilManager {
       // Parallel execution (default): run all councillors concurrently
       const promises = entries.map(([name, config], index) =>
         (async () => {
-          // Stagger launches to avoid tmux split-window collisions
+          // Stagger launches to avoid multiplexer spawn collisions
           if (index > 0) {
             await new Promise((r) =>
               setTimeout(r, index * COUNCILLOR_STAGGER_MS),

@@ -8,7 +8,7 @@ The `src/cli/` directory provides the command-line interface for installing and 
 - **Configuration management**: Reading, parsing (JSONC support), and writing OpenCode configuration files with atomic writes
 - **Skill management**: Installing recommended skills (via `npx skills add`) and custom bundled skills (copied from `src/skills/`)
 - **Provider configuration**: Generating model mappings for 4 supported AI providers: OpenAI, Kimi, GitHub Copilot, ZAI Coding Plan
-- **System integration**: Detecting OpenCode/tmux installation, validating environment, retrieving versions
+- **System integration**: Detecting OpenCode/Zellij installation, validating environment, retrieving versions
 
 ## Design
 
@@ -60,7 +60,7 @@ Represents the main OpenCode configuration file (`opencode.json`/`opencode.jsonc
 **InstallConfig** (`types.ts`):
 ```typescript
 interface InstallConfig {
-  hasTmux: boolean;
+  multiplexerType: 'zellij' | 'none';
   installSkills: boolean;
   installCustomSkills: boolean;
   dryRun?: boolean;
@@ -82,7 +82,7 @@ interface DetectedConfig {
   hasAntigravity: boolean;
   hasChutes?: boolean;
   hasOpencodeZen: boolean;
-  hasTmux: boolean;
+  multiplexerType: 'zellij' | 'none';
 }
 ```
 
@@ -172,7 +172,7 @@ Standardized result type for configuration operations.
 ### Installation Flow
 
 ```
-User runs: bunx oh-my-opencode-slim install [--no-tui] [--tmux=yes|no] [--skills=yes|no] [--dry-run] [--reset]
+User runs: bunx oh-my-opencode-slim install [--no-tui] [--multiplexer=zellij|none] [--skills=yes|no] [--dry-run] [--reset]
           │
           ▼
 ┌─────────────────────────────────────────┐
@@ -218,7 +218,7 @@ User runs: bunx oh-my-opencode-slim install [--no-tui] [--tmux=yes|no] [--skills
 │         - Map models to agents          │
 │         - Assign skills per agent       │
 │         - Add MCPs per agent            │
-│         - Add tmux config if enabled    │
+│         - Add multiplexer config if enabled │
 │                                         │
 │ Step 5: Install recommended skills     │
 │   └─> skills.ts: installSkill()        │
@@ -252,7 +252,7 @@ detectCurrentConfig() [config-io.ts]
 │ Parse oh-my-opencode-slim.json/jsonc   │
 │ - Extract preset name                   │
 │ - Check agent models for providers     │
-│ - Check tmux.enabled flag               │
+│ - Check multiplexer.type                │
 └─────────────────────────────────────────┘
 ```
 
@@ -281,7 +281,7 @@ generateLiteConfig() [providers.ts]
                   │
                   ▼
 ┌─────────────────────────────────────────┐
-│ If hasTmux: add tmux config object     │
+│ If multiplexerType !== 'none': add multiplexer config │
 │   - enabled: true                       │
 │   - layout: 'main-vertical'             │
 │   - main_pane_size: 60                  │
@@ -298,7 +298,7 @@ generateLiteConfig() [providers.ts]
 | `skills.ts` | `npx skills` | Install recommended skills |
 | `skills.ts` | `npm` | Install agent-browser globally |
 | `skills.ts` | `agent-browser` CLI | Install browser automation |
-| `system.ts` | `tmux` CLI | Check tmux installation |
+| `system.ts` | `zellij` CLI | Check Zellij installation |
 | `providers.ts` | `DEFAULT_AGENT_MCPS` | MCP configurations per agent |
 
 ### Internal Dependencies
@@ -355,7 +355,7 @@ skills.ts
 ### Data Flow Summary
 
 ```
-User Input (CLI args: --tmux, --skills, --dry-run, --reset)
+User Input (CLI args: --multiplexer, --skills, --dry-run, --reset)
          │
          ▼
 InstallConfig (preferences)
@@ -369,7 +369,7 @@ InstallConfig (preferences)
               - Model mappings per agent
               - Skill assignments per agent
               - MCP configurations per agent
-              - Tmux settings (if enabled)
+              - Multiplexer settings (if enabled)
 ```
 
 ## Key Files Reference
@@ -384,7 +384,7 @@ InstallConfig (preferences)
 | `skills.ts` | 178 | Recommended/permission-only skills management |
 | `custom-skills.ts` | 98 | Bundled skills management |
 | `paths.ts` | 91 | Path resolution utilities |
-| `system.ts` | 143 | System checks (OpenCode, tmux, version) |
+| `system.ts` | 143 | System checks (OpenCode, Zellij, version) |
 | `types.ts` | 43 | TypeScript type definitions |
 
 ## Skill Registry

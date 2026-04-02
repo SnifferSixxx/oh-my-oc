@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { install } from './install';
-import type { BooleanArg, InstallArgs } from './types';
+import type { BooleanArg, InstallArgs, MultiplexerArg } from './types';
 
 function parseArgs(args: string[]): InstallArgs {
   const result: InstallArgs = {
@@ -10,8 +10,8 @@ function parseArgs(args: string[]): InstallArgs {
   for (const arg of args) {
     if (arg === '--no-tui') {
       result.tui = false;
-    } else if (arg.startsWith('--tmux=')) {
-      result.tmux = arg.split('=')[1] as BooleanArg;
+    } else if (arg.startsWith('--multiplexer=')) {
+      result.multiplexer = arg.split('=')[1] as MultiplexerArg;
     } else if (arg.startsWith('--skills=')) {
       result.skills = arg.split('=')[1] as BooleanArg;
     } else if (arg === '--dry-run') {
@@ -34,7 +34,7 @@ oh-my-opencode-slim installer
 Usage: bunx oh-my-opencode-slim install [OPTIONS]
 
 Options:
-  --tmux=yes|no          Enable tmux integration (yes/no)
+  --multiplexer=TYPE     Configure multiplexer: zellij|none
   --skills=yes|no        Install recommended skills (yes/no)
   --no-tui               Non-interactive mode
   --dry-run              Simulate install without writing files
@@ -46,7 +46,7 @@ For alternative providers, see docs/provider-configurations.md.
 
 Examples:
   bunx oh-my-opencode-slim install
-  bunx oh-my-opencode-slim install --no-tui --tmux=no --skills=yes
+  bunx oh-my-opencode-slim install --no-tui --multiplexer=zellij --skills=yes
   bunx oh-my-opencode-slim install --reset
 `);
 }

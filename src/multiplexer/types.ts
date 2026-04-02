@@ -1,7 +1,7 @@
 /**
  * Multiplexer abstraction layer
  *
- * Provides a unified interface for terminal multiplexers (tmux, zellij, etc.)
+ * Provides a unified interface for terminal multiplexers.
  * to spawn and manage panes for background task visualization.
  */
 
@@ -14,10 +14,10 @@ export interface PaneResult {
 
 /**
  * Core multiplexer interface
- * Implementations: TmuxMultiplexer, ZellijMultiplexer
+ * Implementation: ZellijMultiplexer
  */
 export interface Multiplexer {
-  readonly type: 'tmux' | 'zellij';
+  readonly type: 'zellij';
 
   /**
    * Check if the multiplexer binary is available on the system

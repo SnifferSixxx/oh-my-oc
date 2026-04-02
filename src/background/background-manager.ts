@@ -84,7 +84,7 @@ export class BackgroundTaskManager {
   private depthTracker: SubagentDepthTracker;
   private client: OpencodeClient;
   private directory: string;
-  private tmuxEnabled: boolean;
+  private multiplexerEnabled: boolean;
   private config?: PluginConfig;
   private backgroundConfig: BackgroundTaskConfig;
 
@@ -107,7 +107,7 @@ export class BackgroundTaskManager {
     this.client = ctx.client;
     this.directory = ctx.directory;
     // Check if multiplexer is actually available (handles 'auto' type correctly)
-    this.tmuxEnabled =
+    this.multiplexerEnabled =
       multiplexerConfig !== undefined &&
       multiplexerConfig.type !== 'none' &&
       multiplexerConfig.type !== undefined &&
@@ -326,8 +326,8 @@ export class BackgroundTaskManager {
       // Register depth after session creation succeeds
       this.depthTracker.registerChild(task.parentSessionId, session.data.id);
 
-      // Give TmuxSessionManager time to spawn the pane
-      if (this.tmuxEnabled) {
+      // Give the multiplexer session manager time to spawn the pane
+      if (this.multiplexerEnabled) {
         await new Promise((r) => setTimeout(r, 500));
       }
 

@@ -83,10 +83,10 @@ export const PHASE_REMINDER_TEXT = `Recall Workflow Rules:
 Understand → build the best path (delegated based on Agent rules, split and parallelized as much as possible) → execute → verify.
 If delegating, launch the specialist in the same turn you mention it.`;
 
-// Tmux pane spawn delay (ms) — gives TmuxSessionManager time to create pane
-export const TMUX_SPAWN_DELAY_MS = 500;
+// Multiplexer pane spawn delay (ms) — gives session manager time to create pane
+export const MULTIPLEXER_SPAWN_DELAY_MS = 500;
 
-// Stagger delay (ms) between parallel councillor launches to avoid tmux collisions
+// Stagger delay (ms) between parallel councillor launches to avoid spawn collisions
 export const COUNCILLOR_STAGGER_MS = 250;
 
 // Polling stability

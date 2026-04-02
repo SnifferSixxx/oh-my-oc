@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-The `src/background/` module manages long-running AI agent tasks that execute asynchronously in isolated sessions. It enables fire-and-forget task execution, allowing users to continue working while background tasks complete independently. The module handles task lifecycle management, session creation, completion detection, optional tmux pane integration for visual task tracking, and subagent delegation permission enforcement.
+The `src/background/` module manages long-running AI agent tasks that execute asynchronously in isolated sessions. It enables fire-and-forget task execution, allowing users to continue working while background tasks complete independently. The module handles task lifecycle management, session creation, completion detection, optional Zellij pane integration for visual task tracking, and subagent delegation permission enforcement.
 
 ## Design
 
@@ -87,7 +87,7 @@ Main orchestrator for background task lifecycle:
 - `agentBySessionId`: Session ID to agent name mapping (delegation checks)
 - `client`: OpenCode client API
 - `directory`: Working directory for tasks
-- `tmuxEnabled`: Whether tmux integration is active
+- `multiplexerEnabled`: Whether multiplexer integration is active
 - `config`: Plugin configuration
 - `backgroundConfig`: Background task configuration
 - `startQueue`: Queue of tasks waiting to start
@@ -106,19 +106,19 @@ Main orchestrator for background task lifecycle:
 - `cancel(taskId?)`: Cancel one or all tasks
 - `cleanup()`: Clean up all tasks
 
-#### TmuxSessionManager
-Manages tmux pane lifecycle for background sessions:
+#### MultiplexerSessionManager
+Manages Zellij pane lifecycle for background sessions:
 
 **State:**
 - `client`: OpenCode client API
-- `tmuxConfig`: Tmux configuration
+- `multiplexerConfig`: Multiplexer configuration
 - `serverUrl`: OpenCode server URL
 - `sessions`: Map of tracked sessions
 - `pollInterval`: Polling timer
-- `enabled`: Whether tmux integration is active
+- `enabled`: Whether multiplexer integration is active
 
 **Key Methods:**
-- `onSessionCreated(event)`: Spawn tmux pane for child sessions
+- `onSessionCreated(event)`: Spawn pane for child sessions
 - `onSessionStatus(event)`: Close pane when session becomes idle
 - `onSessionDeleted(event)`: Close pane when session is deleted
 - `pollSessions()`: Fallback polling for status updates
@@ -127,9 +127,9 @@ Manages tmux pane lifecycle for background sessions:
 
 ### Interfaces
 
-#### TrackedSession (TmuxSessionManager)
+#### TrackedSession (MultiplexerSessionManager)
 - `sessionId`: OpenCode session ID
-- `paneId`: Tmux pane identifier
+- `paneId`: Multiplexer pane identifier
 - `parentId`: Parent session ID
 - `title`: Session title
 - `createdAt`: Creation timestamp
@@ -164,7 +164,7 @@ startTask() executes (async)
   ├─ Store sessionId in tasksBySessionId
   ├─ Store agent in agentBySessionId (delegation tracking)
   ├─ Set status='running'
-  ├─ Wait 500ms (if tmux enabled)
+  ├─ Wait 500ms (if multiplexer enabled)
   ├─ Calculate tool permissions based on agent's delegation rules
   ├─ Resolve fallback chain (if enabled)
   ├─ Send prompt with timeout (with fallback attempts)
@@ -237,7 +237,7 @@ For each task:
   └─ completeTask() with 'cancelled' status
 ```
 
-### Tmux Integration Flow
+### Multiplexer Integration Flow
 
 ```
 session.created event received
@@ -246,7 +246,7 @@ onSessionCreated() checks enabled and parentID
   ↓
 Skip if already tracking
   ↓
-spawnTmuxPane() with session info
+spawn pane with session info
   ↓
   ├─ Create pane with title
   ├─ Connect to OpenCode server
@@ -264,7 +264,7 @@ onSessionStatus() checks enabled
   ↓
 closeSession()
   ↓
-  ├─ closeTmuxPane()
+  ├─ close pane
   ├─ Delete from sessions Map
   └─ Stop polling if no sessions left
 ```
@@ -277,7 +277,7 @@ onSessionDeleted() checks enabled
 closeSession() (same as above)
 ```
 
-### Polling Fallback Flow (TmuxSessionManager)
+### Polling Fallback Flow (MultiplexerSessionManager)
 
 ```
 pollSessions() runs on interval
@@ -299,8 +299,8 @@ For each tracked session:
 
 #### Internal Dependencies
 - `@opencode-ai/plugin`: PluginInput type, client API
-- `../config`: BackgroundTaskConfig, PluginConfig, TmuxConfig, POLL_INTERVAL_BACKGROUND_MS, SUBAGENT_DELEGATION_RULES, FALLBACK_FAILOVER_TIMEOUT_MS
-- `../utils`: applyAgentVariant, resolveAgentVariant, createInternalAgentTextPart, log, tmux utilities
+- `../config`: BackgroundTaskConfig, PluginConfig, MultiplexerConfig, POLL_INTERVAL_BACKGROUND_MS, SUBAGENT_DELEGATION_RULES, FALLBACK_FAILOVER_TIMEOUT_MS
+- `../utils`: applyAgentVariant, resolveAgentVariant, createInternalAgentTextPart, log
 
 #### External Dependencies
 - None (uses only OpenCode SDK and standard Node.js APIs)
@@ -314,14 +314,14 @@ For each tracked session:
 #### Integration Points
 
 1. **Plugin Initialization**
-   - BackgroundTaskManager instantiated with PluginInput, TmuxConfig, and PluginConfig
-   - TmuxSessionManager instantiated with PluginInput and TmuxConfig
+   - BackgroundTaskManager instantiated with PluginInput, MultiplexerConfig, and PluginConfig
+   - MultiplexerSessionManager instantiated with PluginInput and MultiplexerConfig
 
 2. **Event Handling**
    - Both managers register as event handlers for session events
    - BackgroundTaskManager handles `session.status` for completion detection
    - BackgroundTaskManager handles `session.deleted` for cleanup
-   - TmuxSessionManager handles `session.created`, `session.status`, and `session.deleted`
+   - MultiplexerSessionManager handles `session.created`, `session.status`, and `session.deleted`
 
 3. **Skill Integration**
    - Background task skill calls `launch()` to create tasks
@@ -342,15 +342,15 @@ For each tracked session:
 #### BackgroundTaskConfig
 - `maxConcurrentStarts`: Maximum concurrent task starts (default: 10)
 
-#### TmuxConfig
-- `enabled`: Whether tmux integration is active
-- Additional tmux-specific settings (see `../config/schema`)
+#### MultiplexerConfig
+- `type`: `zellij` or `none`
+- Additional layout fields are retained in schema for compatibility with the current config shape
 
 ### Error Handling
 
 - Session creation failures mark tasks as `failed`
 - Message extraction failures mark tasks as `failed`
-- Tmux pane spawn failures are logged but don't fail the task
+- Pane spawn failures are logged but don't fail the task
 - Polling errors are logged but don't stop the manager
 - Notification failures are logged but don't affect task completion
 - Fallback chain failures attempt next model, then mark as failed if all fail

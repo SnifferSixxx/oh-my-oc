@@ -11,7 +11,7 @@ describe('providers', () => {
 
   test('generateLiteConfig always generates openai preset', () => {
     const config = generateLiteConfig({
-      hasTmux: false,
+      multiplexerType: 'none',
       installSkills: false,
       installCustomSkills: false,
     });
@@ -27,7 +27,7 @@ describe('providers', () => {
 
   test('generateLiteConfig uses correct OpenAI models', () => {
     const config = generateLiteConfig({
-      hasTmux: false,
+      multiplexerType: 'none',
       installSkills: false,
       installCustomSkills: false,
     });
@@ -46,21 +46,20 @@ describe('providers', () => {
     expect(agents.designer.variant).toBe('medium');
   });
 
-  test('generateLiteConfig enables tmux when requested', () => {
+  test('generateLiteConfig enables zellij when requested', () => {
     const config = generateLiteConfig({
-      hasTmux: true,
+      multiplexerType: 'zellij',
       installSkills: false,
       installCustomSkills: false,
     });
 
-    expect(config.tmux).toBeDefined();
-    expect((config.tmux as any).enabled).toBe(true);
-    expect((config.tmux as any).layout).toBe('main-vertical');
+    expect(config.multiplexer).toBeDefined();
+    expect((config.multiplexer as any).type).toBe('zellij');
   });
 
   test('generateLiteConfig includes default skills', () => {
     const config = generateLiteConfig({
-      hasTmux: false,
+      multiplexerType: 'none',
       installSkills: true,
       installCustomSkills: false,
     });
@@ -78,7 +77,7 @@ describe('providers', () => {
 
   test('generateLiteConfig includes mcps field', () => {
     const config = generateLiteConfig({
-      hasTmux: false,
+      multiplexerType: 'none',
       installSkills: false,
       installCustomSkills: false,
     });
@@ -92,7 +91,7 @@ describe('providers', () => {
 
   test('generateLiteConfig openai includes correct mcps', () => {
     const config = generateLiteConfig({
-      hasTmux: false,
+      multiplexerType: 'none',
       installSkills: false,
       installCustomSkills: false,
     });

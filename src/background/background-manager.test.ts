@@ -53,10 +53,10 @@ describe('BackgroundTaskManager', () => {
       expect(manager).toBeDefined();
     });
 
-    test('creates manager with tmux config', () => {
+    test('creates manager with multiplexer config', () => {
       const ctx = createMockContext();
       const manager = new BackgroundTaskManager(ctx, {
-        enabled: true,
+        type: 'zellij',
         layout: 'main-vertical',
         main_pane_size: 60,
       });

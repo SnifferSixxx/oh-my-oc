@@ -39,7 +39,6 @@ const SESSION_MISSING_GRACE_MS = POLL_INTERVAL_BACKGROUND_MS * 3;
  * MultiplexerSessionManager tracks child sessions and spawns/closes multiplexer panes for them.
  *
  * Uses session.status events for completion detection instead of polling.
- * Supports both tmux and zellij multiplexers.
  */
 export class MultiplexerSessionManager {
   private client: OpencodeClient;
@@ -293,8 +292,3 @@ export class MultiplexerSessionManager {
     log('[multiplexer-session-manager] cleanup complete');
   }
 }
-
-/**
- * @deprecated Use MultiplexerSessionManager instead
- */
-export const TmuxSessionManager = MultiplexerSessionManager;

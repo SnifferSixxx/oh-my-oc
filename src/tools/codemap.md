@@ -215,7 +215,7 @@ manager.cancel(task_id) or manager.cancel(all)
 
 #### Internal Dependencies
 - **src/background**: `BackgroundTaskManager` for background task tools
-- **src/config**: `SUBAGENT_NAMES`, `PluginConfig`, `TmuxConfig`
+- **src/config**: `SUBAGENT_NAMES`, `PluginConfig`, `MultiplexerConfig`
 - **src/utils**: `extractZip` for binary extraction
 - **src/utils/logger**: Logging utilities
 

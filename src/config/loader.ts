@@ -128,7 +128,7 @@ function deepMerge<T extends Record<string, unknown>>(
  * 2. Project config: <directory>/.opencode/oh-my-opencode-slim.jsonc or .json
  *
  * JSONC format is preferred over JSON (allows comments and trailing commas).
- * Project config takes precedence over user config. Nested objects (agents, tmux) are
+ * Project config takes precedence over user config. Nested objects are
  * deep-merged, while top-level arrays are replaced entirely by project config.
  *
  * @param directory - Project directory to search for .opencode config
@@ -161,15 +161,11 @@ export function loadPluginConfig(directory: string): PluginConfig {
       ...config,
       ...projectConfig,
       agents: deepMerge(config.agents, projectConfig.agents),
-      tmux: deepMerge(config.tmux, projectConfig.tmux),
       multiplexer: deepMerge(config.multiplexer, projectConfig.multiplexer),
       fallback: deepMerge(config.fallback, projectConfig.fallback),
       council: deepMerge(config.council, projectConfig.council),
     };
   }
-
-  // Migrate legacy tmux config to multiplexer config for backward compatibility
-  config = migrateTmuxToMultiplexer(config);
 
   // Override preset from environment variable if set
   const envPreset = process.env.OH_MY_OPENCODE_SLIM_PRESET;
@@ -262,33 +258,4 @@ export function loadAgentPrompt(
   );
 
   return result;
-}
-
-/**
- * Migrate legacy tmux config to multiplexer config for backward compatibility.
- * If tmux.enabled is true and no multiplexer config is set, creates a multiplexer
- * config from the tmux settings.
- *
- * @param config - Plugin config to migrate
- * @returns Config with multiplexer settings applied
- */
-function migrateTmuxToMultiplexer(config: PluginConfig): PluginConfig {
-  // If multiplexer is already configured, use it as-is
-  if (config.multiplexer?.type && config.multiplexer.type !== 'none') {
-    return config;
-  }
-
-  // If tmux is enabled, migrate to multiplexer
-  if (config.tmux?.enabled) {
-    return {
-      ...config,
-      multiplexer: {
-        type: 'tmux',
-        layout: config.tmux.layout ?? 'main-vertical',
-        main_pane_size: config.tmux.main_pane_size ?? 60,
-      },
-    };
-  }
-
-  return config;
 }

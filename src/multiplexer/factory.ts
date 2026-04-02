@@ -4,11 +4,10 @@
 
 import type { MultiplexerConfig, MultiplexerType } from '../config/schema';
 import { log } from '../utils/logger';
-import { TmuxMultiplexer } from './tmux';
 import type { Multiplexer } from './types';
 import { ZellijMultiplexer } from './zellij';
 
-const multiplexerCache = new Map<MultiplexerType | 'auto', Multiplexer>();
+const multiplexerCache = new Map<MultiplexerType, Multiplexer>();
 
 /**
  * Create or retrieve a multiplexer instance based on config
@@ -27,45 +26,20 @@ export function getMultiplexer(config: MultiplexerConfig): Multiplexer | null {
   }
 
   // Create new instance
-  let multiplexer: Multiplexer;
-  let actualType: MultiplexerType;
-
   switch (type) {
-    case 'tmux':
-      multiplexer = new TmuxMultiplexer(config.layout, config.main_pane_size);
-      actualType = 'tmux';
-      break;
     case 'zellij':
-      multiplexer = new ZellijMultiplexer(config.layout, config.main_pane_size);
-      actualType = 'zellij';
       break;
-    case 'auto': {
-      // Auto-detect based on environment variables only
-      // Note: Does NOT fall back to binary availability checks
-      if (process.env.TMUX) {
-        multiplexer = new TmuxMultiplexer(config.layout, config.main_pane_size);
-        actualType = 'tmux';
-      } else if (process.env.ZELLIJ) {
-        multiplexer = new ZellijMultiplexer(
-          config.layout,
-          config.main_pane_size,
-        );
-        actualType = 'zellij';
-      } else {
-        // Not inside any session, disable multiplexer
-        log('[multiplexer] auto: not inside any session, disabling');
-        return null;
-      }
-      break;
-    }
     default:
       log(`[multiplexer] Unknown type: ${type}`);
       return null;
   }
 
-  // Cache the instance under the actual type (not 'auto')
-  multiplexerCache.set(actualType, multiplexer);
-  log(`[multiplexer] Created ${actualType} instance`);
+  const multiplexer = new ZellijMultiplexer(
+    config.layout,
+    config.main_pane_size,
+  );
+  multiplexerCache.set(type, multiplexer);
+  log(`[multiplexer] Created ${type} instance`);
 
   return multiplexer;
 }
@@ -75,20 +49,6 @@ export function getMultiplexer(config: MultiplexerConfig): Multiplexer | null {
  */
 export function clearMultiplexerCache(): void {
   multiplexerCache.clear();
-}
-
-/**
- * Get the effective multiplexer type for auto mode
- * Returns the actual type that would be used (tmux/zellij/none)
- */
-export function getAutoMultiplexerType(): 'tmux' | 'zellij' | 'none' {
-  if (process.env.TMUX) {
-    return 'tmux';
-  }
-  if (process.env.ZELLIJ) {
-    return 'zellij';
-  }
-  return 'none';
 }
 
 /**

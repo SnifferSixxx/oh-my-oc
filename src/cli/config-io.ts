@@ -229,7 +229,7 @@ export function detectCurrentConfig(): DetectedConfig {
     hasAntigravity: false,
     hasChutes: false,
     hasOpencodeZen: false,
-    hasTmux: false,
+    multiplexerType: 'none',
   };
 
   const { config } = parseConfig(getExistingConfigPath());
@@ -277,9 +277,11 @@ export function detectCurrentConfig(): DetectedConfig {
       }
     }
 
-    if (configObj.tmux && typeof configObj.tmux === 'object') {
-      const tmuxConfig = configObj.tmux as { enabled?: boolean };
-      result.hasTmux = tmuxConfig.enabled === true;
+    if (configObj.multiplexer && typeof configObj.multiplexer === 'object') {
+      const multiplexerConfig = configObj.multiplexer as {
+        type?: 'zellij' | 'none';
+      };
+      result.multiplexerType = multiplexerConfig.type ?? 'none';
     }
   }
 

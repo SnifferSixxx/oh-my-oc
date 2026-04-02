@@ -3,7 +3,7 @@ import { MultiplexerSessionManager } from './multiplexer-session-manager';
 
 // Define the mock multiplexer
 const mockMultiplexer = {
-  type: 'tmux' as const,
+  type: 'zellij' as const,
   isAvailable: mock(async () => true),
   isInsideSession: mock(() => true),
   spawnPane: mock(async () => ({
@@ -39,7 +39,7 @@ function createMockContext(overrides?: {
 }
 
 const defaultMultiplexerConfig = {
-  type: 'tmux' as const,
+  type: 'zellij' as const,
   layout: 'main-vertical' as const,
   main_pane_size: 60,
 };
@@ -198,15 +198,5 @@ describe('MultiplexerSessionManager', () => {
       expect(mockMultiplexer.closePane).toHaveBeenCalledWith('p1');
       expect(mockMultiplexer.closePane).toHaveBeenCalledWith('p2');
     });
-  });
-});
-
-// Backward compatibility test
-describe('TmuxSessionManager (backward compatibility)', () => {
-  test('TmuxSessionManager is alias for MultiplexerSessionManager', async () => {
-    const { TmuxSessionManager } = await import(
-      './multiplexer-session-manager'
-    );
-    expect(TmuxSessionManager).toBe(MultiplexerSessionManager);
   });
 });

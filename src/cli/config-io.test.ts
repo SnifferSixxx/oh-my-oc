@@ -125,7 +125,7 @@ describe('config-io', () => {
     paths.ensureConfigDir();
 
     const result = writeLiteConfig({
-      hasTmux: true,
+      multiplexerType: 'zellij',
       installSkills: false,
       installCustomSkills: false,
       reset: false,
@@ -135,7 +135,7 @@ describe('config-io', () => {
     const saved = JSON.parse(readFileSync(litePath, 'utf-8'));
     expect(saved.preset).toBe('openai');
     expect(saved.presets.openai).toBeDefined();
-    expect(saved.tmux.enabled).toBe(true);
+    expect(saved.multiplexer.type).toBe('zellij');
   });
 
   test('disableDefaultAgents disables explore and general agents', () => {
@@ -179,7 +179,7 @@ describe('config-io', () => {
             librarian: { model: 'zai-coding-plan/glm-4.7' },
           },
         },
-        tmux: { enabled: true },
+        multiplexer: { type: 'zellij' },
       }),
     );
 
@@ -190,6 +190,6 @@ describe('config-io', () => {
     expect(detected.hasAnthropic).toBe(true);
     expect(detected.hasCopilot).toBe(true);
     expect(detected.hasZaiPlan).toBe(true);
-    expect(detected.hasTmux).toBe(true);
+    expect(detected.multiplexerType).toBe('zellij');
   });
 });

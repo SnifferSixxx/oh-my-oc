@@ -1,8 +1,9 @@
 export type BooleanArg = 'yes' | 'no';
+export type MultiplexerArg = 'zellij' | 'none';
 
 export interface InstallArgs {
   tui: boolean;
-  tmux?: BooleanArg;
+  multiplexer?: MultiplexerArg;
   skills?: BooleanArg;
   dryRun?: boolean;
   reset?: boolean;
@@ -16,7 +17,7 @@ export interface OpenCodeConfig {
 }
 
 export interface InstallConfig {
-  hasTmux: boolean;
+  multiplexerType: MultiplexerArg;
   installSkills: boolean;
   installCustomSkills: boolean;
   dryRun?: boolean;
@@ -39,5 +40,5 @@ export interface DetectedConfig {
   hasAntigravity: boolean;
   hasChutes?: boolean;
   hasOpencodeZen: boolean;
-  hasTmux: boolean;
+  multiplexerType: MultiplexerArg;
 }

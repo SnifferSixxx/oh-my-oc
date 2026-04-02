@@ -24,7 +24,7 @@ bunx oh-my-opencode-slim@latest install
 Or use non-interactive mode:
 
 ```bash
-bunx oh-my-opencode-slim@latest install --no-tui --tmux=no --skills=yes
+bunx oh-my-opencode-slim@latest install --no-tui --multiplexer=none --skills=yes
 ```
 
 ### Configuration Options
@@ -33,7 +33,7 @@ The installer supports the following options:
 
 | Option | Description |
 |--------|-------------|
-| `--tmux=yes|no` | Enable tmux integration (yes/no) |
+| `--multiplexer=zellij|none` | Configure multiplexer integration |
 | `--skills=yes|no` | Install recommended skills (yes/no) |
 | `--no-tui` | Non-interactive mode |
 | `--dry-run` | Simulate install without writing files |
@@ -98,19 +98,19 @@ If not installed, direct the user to https://opencode.ai/docs first.
 The installer generates an OpenAI configuration by default:
 
 ```bash
-bunx oh-my-opencode-slim@latest install --no-tui --tmux=no --skills=yes
+bunx oh-my-opencode-slim@latest install --no-tui --multiplexer=none --skills=yes
 ```
 
 **Examples:**
 ```bash
-# Interactive install (asks about tmux and skills)
+# Interactive install (asks about Zellij and skills)
 bunx oh-my-opencode-slim@latest install
 
-# Non-interactive with tmux and skills
-bunx oh-my-opencode-slim@latest install --no-tui --tmux=yes --skills=yes
+# Non-interactive with Zellij and skills
+bunx oh-my-opencode-slim@latest install --no-tui --multiplexer=zellij --skills=yes
 
-# Non-interactive without tmux or skills
-bunx oh-my-opencode-slim@latest install --no-tui --tmux=no --skills=no
+# Non-interactive without multiplexer or skills
+bunx oh-my-opencode-slim@latest install --no-tui --multiplexer=none --skills=no
 
 # Force overwrite existing configuration
 bunx oh-my-opencode-slim@latest install --reset
@@ -216,12 +216,12 @@ Add a `$schema` reference to your config for autocomplete and inline validation:
 
 Works in VS Code, Neovim (with `jsonls`), and any editor that supports JSON Schema. Catches typos and wrong nesting immediately.
 
-### Tmux Integration Not Working
+### Multiplexer Integration Not Working
 
 Make sure you're running OpenCode with the `--port` flag and the port matches your `OPENCODE_PORT` environment variable:
 
 ```bash
-tmux
+zellij
 export OPENCODE_PORT=4096
 opencode --port 4096
 ```

@@ -9,7 +9,7 @@ Complete reference for all configuration files and options in oh-my-opencode-sli
 | File | Purpose |
 |------|---------|
 | `~/.config/opencode/opencode.json` | OpenCode core settings (plugin registration, providers) |
-| `~/.config/opencode/oh-my-opencode-slim.json` | Plugin settings — agents, tmux, MCPs, council |
+| `~/.config/opencode/oh-my-opencode-slim.json` | Plugin settings — agents, multiplexer, MCPs, council |
 | `~/.config/opencode/oh-my-opencode-slim.jsonc` | Same, but with JSONC (comments + trailing commas). Takes precedence over `.json` if both exist |
 | `.opencode/oh-my-opencode-slim.json` | Project-local overrides (optional, checked first) |
 
@@ -68,9 +68,8 @@ All config files support **JSONC** (JSON with Comments):
     },
   },
 
-  "tmux": {
-    "enabled": true,  // Enable pane monitoring
-    "layout": "main-vertical",
+  "multiplexer": {
+    "type": "zellij"
   },
 }
 ```
@@ -88,9 +87,9 @@ All config files support **JSONC** (JSON with Comments):
 | `presets.<name>.<agent>.variant` | string | — | Reasoning effort: `"low"`, `"medium"`, `"high"` |
 | `presets.<name>.<agent>.skills` | string[] | — | Skills the agent can use (`"*"`, `"!item"`, explicit list) |
 | `presets.<name>.<agent>.mcps` | string[] | — | MCPs the agent can use (`"*"`, `"!item"`, explicit list) |
-| `tmux.enabled` | boolean | `false` | Enable tmux pane spawning |
-| `tmux.layout` | string | `"main-vertical"` | Layout: `main-vertical`, `main-horizontal`, `tiled`, `even-horizontal`, `even-vertical` |
-| `tmux.main_pane_size` | number | `60` | Main pane size as percentage (20–80) |
+| `multiplexer.type` | string | `"none"` | `zellij` or `none` |
+| `multiplexer.layout` | string | `"main-vertical"` | Retained for schema consistency; Zellij ignores tmux-style layout control |
+| `multiplexer.main_pane_size` | number | `60` | Retained for schema consistency; Zellij ignores tmux-style main pane sizing |
 | `disabled_mcps` | string[] | `[]` | MCP server IDs to disable globally |
 | `fallback.enabled` | boolean | `false` | Enable model failover on timeout/error |
 | `fallback.timeoutMs` | number | `15000` | Time before aborting and trying next model |

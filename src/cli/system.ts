@@ -93,9 +93,9 @@ export async function isOpenCodeInstalled(): Promise<boolean> {
   return false;
 }
 
-export async function isTmuxInstalled(): Promise<boolean> {
+export async function isZellijInstalled(): Promise<boolean> {
   try {
-    const proc = Bun.spawn(['tmux', '-V'], {
+    const proc = Bun.spawn(['zellij', '--version'], {
       stdout: 'pipe',
       stderr: 'pipe',
     });

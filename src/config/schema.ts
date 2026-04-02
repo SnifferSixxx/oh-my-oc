@@ -101,7 +101,7 @@ export const AgentOverrideConfigSchema = z.object({
 });
 
 // Multiplexer type options
-export const MultiplexerTypeSchema = z.enum(['auto', 'tmux', 'zellij', 'none']);
+export const MultiplexerTypeSchema = z.enum(['zellij', 'none']);
 export type MultiplexerType = z.infer<typeof MultiplexerTypeSchema>;
 
 // Layout options (shared across multiplexers)
@@ -115,10 +115,6 @@ export const MultiplexerLayoutSchema = z.enum([
 
 export type MultiplexerLayout = z.infer<typeof MultiplexerLayoutSchema>;
 
-// Legacy Tmux layout options (for backward compatibility)
-export const TmuxLayoutSchema = MultiplexerLayoutSchema;
-export type TmuxLayout = MultiplexerLayout;
-
 // Multiplexer integration configuration (new unified config)
 export const MultiplexerConfigSchema = z.object({
   type: MultiplexerTypeSchema.default('none'),
@@ -127,16 +123,6 @@ export const MultiplexerConfigSchema = z.object({
 });
 
 export type MultiplexerConfig = z.infer<typeof MultiplexerConfigSchema>;
-
-// Legacy Tmux integration configuration (for backward compatibility)
-// When tmux.enabled is true, it's equivalent to multiplexer.type = 'tmux'
-export const TmuxConfigSchema = z.object({
-  enabled: z.boolean().default(false),
-  layout: TmuxLayoutSchema.default('main-vertical'),
-  main_pane_size: z.number().min(20).max(80).default(60), // percentage for main pane
-});
-
-export type TmuxConfig = z.infer<typeof TmuxConfigSchema>;
 
 export type AgentOverrideConfig = z.infer<typeof AgentOverrideConfigSchema>;
 
@@ -190,11 +176,7 @@ export const PluginConfigSchema = z.object({
   presets: z.record(z.string(), PresetSchema).optional(),
   agents: z.record(z.string(), AgentOverrideConfigSchema).optional(),
   disabled_mcps: z.array(z.string()).optional(),
-  // Multiplexer config (new unified config - preferred)
   multiplexer: MultiplexerConfigSchema.optional(),
-  // Legacy tmux config (for backward compatibility)
-  // When tmux.enabled is true, it's equivalent to multiplexer.type = 'tmux'
-  tmux: TmuxConfigSchema.optional(),
   websearch: WebsearchConfigSchema.optional(),
   background: BackgroundTaskConfigSchema.optional(),
   fallback: FailoverConfigSchema.optional(),

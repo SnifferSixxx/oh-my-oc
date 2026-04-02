@@ -98,11 +98,14 @@ function handleStepResult(
   return true;
 }
 
-function formatConfigSummary(): string {
+function formatConfigSummary(config: InstallConfig): string {
   const lines: string[] = [];
   lines.push(`${BOLD}Configuration Summary${RESET}`);
   lines.push('');
   lines.push(`  ${BOLD}Preset:${RESET} ${BLUE}openai${RESET}`);
+  lines.push(
+    `  ${BOLD}Multiplexer:${RESET} ${BLUE}${config.multiplexerType}${RESET}`,
+  );
   lines.push(`  ${SYMBOLS.check} OpenAI (default)`);
   const seeDocs = 'see docs/provider-configurations.md';
   lines.push(`  ${DIM}○ Kimi — ${seeDocs}${RESET}`);
@@ -227,7 +230,7 @@ async function runInstall(config: InstallConfig): Promise<number> {
 
   // Summary
   console.log();
-  console.log(formatConfigSummary());
+  console.log(formatConfigSummary(config));
   console.log();
 
   const statusMsg = isUpdate
@@ -258,7 +261,7 @@ async function runInstall(config: InstallConfig): Promise<number> {
 
 export async function install(args: InstallArgs): Promise<number> {
   const config: InstallConfig = {
-    hasTmux: args.tmux === 'yes',
+    multiplexerType: args.multiplexer ?? 'zellij',
     installSkills: args.skills === 'yes',
     installCustomSkills: args.skills === 'yes',
     dryRun: args.dryRun,
