@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { SLIM_INTERNAL_INITIATOR_MARKER } from '../utils';
+import { createInternalAgentTextPart } from '../utils';
 import { BackgroundTaskManager } from './background-manager';
 
 // Mock the plugin context
@@ -722,11 +722,9 @@ describe('BackgroundTaskManager', () => {
         [{ body?: { parts?: Array<{ text?: string }> } }]
       >;
       const notificationCall = promptCalls[promptCalls.length - 1];
-      expect(
-        notificationCall[0].body?.parts?.[0]?.text?.includes(
-          SLIM_INTERNAL_INITIATOR_MARKER,
-        ),
-      ).toBe(true);
+      expect(notificationCall[0].body?.parts?.[0]).toEqual(
+        createInternalAgentTextPart('[Background task "d" completed]'),
+      );
     });
 
     test('retries next fallback model when first model returns empty response', async () => {

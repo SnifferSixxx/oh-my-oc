@@ -308,7 +308,7 @@ export class BackgroundTaskManager {
       const session = await this.client.session.create({
         body: {
           parentID: task.parentSessionId,
-          title: `Background: ${task.description}`,
+          title: `[${task.agent}] ${task.description}`,
         },
         query: { directory: this.directory },
       });

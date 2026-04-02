@@ -9,7 +9,7 @@
  * Uses experimental.chat.messages.transform so it doesn't show in UI.
  */
 import { PHASE_REMINDER_TEXT } from '../../config/constants';
-import { SLIM_INTERNAL_INITIATOR_MARKER } from '../../utils';
+import { hasInternalInitiatorMarker } from '../../utils';
 
 export const PHASE_REMINDER = `<reminder>${PHASE_REMINDER_TEXT}</reminder>`;
 
@@ -78,7 +78,7 @@ export function createPhaseReminderHook() {
       }
 
       const originalText = lastUserMessage.parts[textPartIndex].text ?? '';
-      if (originalText.includes(SLIM_INTERNAL_INITIATOR_MARKER)) {
+      if (hasInternalInitiatorMarker(lastUserMessage.parts[textPartIndex])) {
         return;
       }
 

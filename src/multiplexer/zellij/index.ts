@@ -1,9 +1,10 @@
 /**
  * Zellij multiplexer implementation
  *
- * Creates a dedicated "opencode-agents" tab for all sub-agent panes.
- * - First sub-agent uses the default pane from new-tab
- * - Subsequent sub-agents create new panes
+ * Creates a dedicated tab per agent type for sub-agent panes.
+ * - Each agent type (explorer, fixer, etc.) gets its own named tab
+ * - First pane per agent reuses the default pane from new-tab
+ * - Subsequent panes for the same agent open in the same tab
  * - User stays in their original tab
  */
 
@@ -18,6 +19,12 @@ interface ZellijTabInfo {
   tab_id: number;
 }
 
+interface AgentTabState {
+  tabId: string;
+  firstPaneId: string | null;
+  firstPaneUsed: boolean;
+}
+
 export class ZellijMultiplexer implements Multiplexer {
   readonly type = 'zellij' as const;
 
@@ -25,9 +32,7 @@ export class ZellijMultiplexer implements Multiplexer {
   private hasChecked = false;
   private storedLayout: MultiplexerLayout;
   private storedMainPaneSize: number;
-  private agentTabId: string | null = null;
-  private firstPaneId: string | null = null;
-  private firstPaneUsed = false;
+  private agentTabs = new Map<string, AgentTabState>();
 
   constructor(layout: MultiplexerLayout = 'main-vertical', mainPaneSize = 60) {
     // Note: Zellij does NOT support layout configuration like tmux.
@@ -59,33 +64,42 @@ export class ZellijMultiplexer implements Multiplexer {
     if (!zellij) return { success: false };
 
     try {
-      // Ensure agent tab exists on first call
-      if (!this.agentTabId) {
-        const result = await this.ensureAgentTab(zellij);
+      // Extract agent name from "[agent] description" format
+      const agentName = this.extractAgentName(description);
+
+      // Ensure a tab exists for this agent
+      let tabState = this.agentTabs.get(agentName);
+      if (!tabState) {
+        const result = await this.ensureAgentTab(zellij, agentName);
         if (!result) return { success: false };
-        this.agentTabId = result.tabId;
-        this.firstPaneId = result.firstPaneId;
+        tabState = {
+          tabId: result.tabId,
+          firstPaneId: result.firstPaneId,
+          firstPaneUsed: false,
+        };
+        this.agentTabs.set(agentName, tabState);
       }
 
-      // Use the default pane from new-tab for the first sub-agent
-      if (!this.firstPaneUsed && this.firstPaneId) {
+      // Use the default pane from new-tab for the first pane in this agent tab
+      if (!tabState.firstPaneUsed && tabState.firstPaneId) {
         const success = await this.runInPane(
           zellij,
-          this.firstPaneId,
+          tabState.firstPaneId,
           sessionId,
           serverUrl,
           description,
         );
         if (success) {
-          this.firstPaneUsed = true;
-          return { success: true, paneId: this.firstPaneId };
+          tabState.firstPaneUsed = true;
+          return { success: true, paneId: tabState.firstPaneId };
         }
         // fall through to createPaneInAgentTab on failure
       }
 
-      // Create additional pane
+      // Create additional pane in this agent's tab
       return await this.createPaneInAgentTab(
         zellij,
+        tabState.tabId,
         sessionId,
         serverUrl,
         description,
@@ -95,8 +109,23 @@ export class ZellijMultiplexer implements Multiplexer {
     }
   }
 
+  async renameCurrentTab(name: string): Promise<void> {
+    const zellij = await this.getBinary();
+    if (!zellij) return;
+    await spawn([zellij, 'action', 'rename-tab', name], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+    }).exited;
+  }
+
+  private extractAgentName(description: string): string {
+    const match = description.match(/^\[([^\]]+)\]/);
+    return match ? match[1] : 'agent';
+  }
+
   private async createPaneInAgentTab(
     zellij: string,
+    agentTabId: string,
     sessionId: string,
     serverUrl: string,
     description: string,
@@ -105,7 +134,7 @@ export class ZellijMultiplexer implements Multiplexer {
     const paneName = description.slice(0, 30).replace(/"/g, '\\"');
 
     const currentTabId = await this.getCurrentTabId(zellij);
-    const inAgentTab = currentTabId === this.agentTabId;
+    const inAgentTab = currentTabId === agentTabId;
 
     if (inAgentTab) {
       // Already in agent tab, create pane directly
@@ -137,15 +166,11 @@ export class ZellijMultiplexer implements Multiplexer {
       return { success: false };
     }
 
-    if (!this.agentTabId) {
-      return { success: false };
-    }
-
     // Get current tab before switching
     const originalTab = await this.getCurrentTabId(zellij);
 
     // Switch to agent tab
-    await spawn([zellij, 'action', 'go-to-tab-by-id', this.agentTabId], {
+    await spawn([zellij, 'action', 'go-to-tab-by-id', agentTabId], {
       stdout: 'ignore',
       stderr: 'ignore',
     }).exited;
@@ -225,10 +250,11 @@ export class ZellijMultiplexer implements Multiplexer {
 
   private async ensureAgentTab(
     zellij: string,
+    agentName: string,
   ): Promise<{ tabId: string; firstPaneId: string } | null> {
     try {
-      // Try to find existing tab
-      const existingTab = await this.findTabByName(zellij, 'opencode-agents');
+      // Try to find existing tab for this agent
+      const existingTab = await this.findTabByName(zellij, agentName);
       if (existingTab) {
         const firstPane = await this.getFirstPaneInTab(
           zellij,
@@ -243,16 +269,16 @@ export class ZellijMultiplexer implements Multiplexer {
       // Get panes before creating tab
       const beforePanes = await this.listPanes(zellij);
 
-      // Create new tab
+      // Create new tab named after the agent
       const createProc = spawn(
-        [zellij, 'action', 'new-tab', '--name', 'opencode-agents'],
+        [zellij, 'action', 'new-tab', '--name', agentName],
         { stdout: 'pipe', stderr: 'pipe' },
       );
       const createExit = await createProc.exited;
       if (createExit !== 0) return null;
 
       // Get the new tab info
-      const newTab = await this.findTabByName(zellij, 'opencode-agents');
+      const newTab = await this.findTabByName(zellij, agentName);
       if (!newTab) return null;
 
       // Get the new pane

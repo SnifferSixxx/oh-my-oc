@@ -70,7 +70,7 @@ export async function isServerRunning(
   timeoutMs = 3000,
   maxAttempts = 2,
 ): Promise<boolean> {
-  const healthUrl = new URL('/health', serverUrl).toString();
+  const healthUrl = new URL('/global/health', serverUrl).toString();
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const controller = new AbortController();

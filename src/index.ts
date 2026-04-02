@@ -15,7 +15,7 @@ import {
   ForegroundFallbackManager,
 } from './hooks';
 import { createBuiltinMcps } from './mcp';
-import { getMultiplexer, startAvailabilityCheck } from './multiplexer';
+import { getMultiplexer, startAvailabilityCheck, ZellijMultiplexer } from './multiplexer';
 import {
   ast_grep_replace,
   ast_grep_search,
@@ -93,6 +93,29 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   // Start background availability check if enabled
   if (multiplexerEnabled) {
     startAvailabilityCheck(multiplexerConfig);
+  }
+
+  // Track child session IDs so we can ignore their messages for tab renaming
+  const childSessionIds = new Set<string>();
+  // Maps session IDs to their project directory — used to filter cross-project events
+  const sessionDirectoryMap = new Map<string, string>();
+  // Resolved after config hook runs — used to rename tab on first session
+  let defaultAgentName = 'opencode';
+  let mainTabRenamed = false;
+
+  // Rename main Zellij tab after TUI is fully mounted (delayed to avoid being
+  // overwritten by opencode's own terminal title updates during startup)
+  if (
+    multiplexerEnabled &&
+    multiplexer instanceof ZellijMultiplexer &&
+    multiplexer.isInsideSession()
+  ) {
+    setTimeout(() => {
+      if (!mainTabRenamed) {
+        mainTabRenamed = true;
+        multiplexer.renameCurrentTab(defaultAgentName).catch(() => {});
+      }
+    }, 2000);
   }
 
   const backgroundManager = new BackgroundTaskManager(
@@ -195,6 +218,11 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         (opencodeConfig as { default_agent?: string }).default_agent =
           'orchestrator';
       }
+
+      // Cache resolved default agent for Zellij tab rename on first session
+      defaultAgentName =
+        (opencodeConfig as { default_agent?: string }).default_agent ??
+        'opencode';
 
       // Merge Agent configs — per-agent shallow merge to preserve
       // user-supplied fields (e.g. tools, permission) from opencode.json
@@ -359,6 +387,52 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
 
       // Handle auto-update checking
       await autoUpdateChecker.event(input);
+
+      // Track child sessions and rename Zellij tab based on active agent
+      if (
+        multiplexerEnabled &&
+        multiplexer instanceof ZellijMultiplexer &&
+        multiplexer.isInsideSession()
+      ) {
+        const ev = input.event as {
+          type: string;
+          properties?: {
+            info?: { id?: string; parentID?: string; agent?: string; role?: string; directory?: string };
+          };
+        };
+
+        // Track all sessions: directory for cross-project filtering, parentID for child detection
+        if (ev.type === 'session.created' && ev.properties?.info?.id) {
+          const info = ev.properties.info;
+          const sessionId = info.id as string;
+          if (info.directory) {
+            sessionDirectoryMap.set(sessionId, info.directory);
+          }
+          if (info.parentID) {
+            childSessionIds.add(sessionId);
+          }
+        }
+
+        // Rename tab only when we have confirmed info: user message with agent field,
+        // from a non-child session belonging to this project's directory
+        if (ev.type === 'message.updated') {
+          const info = ev.properties?.info as
+            | { role?: string; agent?: string; sessionID?: string }
+            | undefined;
+          if (
+            info?.role === 'user' &&
+            info.agent &&
+            info.sessionID &&
+            !childSessionIds.has(info.sessionID)
+          ) {
+            const sessionDir = sessionDirectoryMap.get(info.sessionID);
+            // Only rename if the session belongs to this project (or directory unknown)
+            if (!sessionDir || sessionDir === ctx.directory) {
+              multiplexer.renameCurrentTab(info.agent).catch(() => {});
+            }
+          }
+        }
+      }
 
       // Handle multiplexer pane spawning for OpenCode's Task tool sessions
       await multiplexerSessionManager.onSessionCreated(

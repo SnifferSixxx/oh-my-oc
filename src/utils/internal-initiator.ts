@@ -1,6 +1,8 @@
 export const SLIM_INTERNAL_INITIATOR_MARKER =
   '<!-- SLIM_INTERNAL_INITIATOR -->';
 
+const SLIM_INTERNAL_INITIATOR_METADATA_KEY = 'slimInternalInitiator';
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -8,10 +10,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function createInternalAgentTextPart(text: string): {
   type: 'text';
   text: string;
+  metadata: Record<string, unknown>;
 } {
   return {
     type: 'text',
-    text: `${text}\n${SLIM_INTERNAL_INITIATOR_MARKER}`,
+    text,
+    metadata: {
+      [SLIM_INTERNAL_INITIATOR_METADATA_KEY]: true,
+    },
   };
 }
 
@@ -24,5 +30,13 @@ export function hasInternalInitiatorMarker(part: unknown): boolean {
     return false;
   }
 
-  return part.text.includes(SLIM_INTERNAL_INITIATOR_MARKER);
+  if (part.text.includes(SLIM_INTERNAL_INITIATOR_MARKER)) {
+    return true;
+  }
+
+  if (!isRecord(part.metadata)) {
+    return false;
+  }
+
+  return part.metadata[SLIM_INTERNAL_INITIATOR_METADATA_KEY] === true;
 }
