@@ -45,6 +45,7 @@ export class MultiplexerSessionManager {
   private serverUrl: string;
   private multiplexer: Multiplexer | null = null;
   private sessions = new Map<string, TrackedSession>();
+  private closingSessions = new Set<string>();
   private pollInterval?: ReturnType<typeof setInterval>;
   private enabled = false;
 
@@ -252,14 +253,21 @@ export class MultiplexerSessionManager {
   private async closeSession(sessionId: string): Promise<void> {
     const tracked = this.sessions.get(sessionId);
     if (!tracked || !this.multiplexer) return;
+    if (this.closingSessions.has(sessionId)) return;
+
+    this.closingSessions.add(sessionId);
+    this.sessions.delete(sessionId);
 
     log('[multiplexer-session-manager] closing session pane', {
       sessionId,
       paneId: tracked.paneId,
     });
 
-    await this.multiplexer.closePane(tracked.paneId);
-    this.sessions.delete(sessionId);
+    try {
+      await this.multiplexer.closePane(tracked.paneId);
+    } finally {
+      this.closingSessions.delete(sessionId);
+    }
 
     if (this.sessions.size === 0) {
       this.stopPolling();
@@ -271,6 +279,7 @@ export class MultiplexerSessionManager {
    */
   async cleanup(): Promise<void> {
     this.stopPolling();
+    this.closingSessions.clear();
 
     if (this.sessions.size > 0 && this.multiplexer) {
       log('[multiplexer-session-manager] closing all panes', {

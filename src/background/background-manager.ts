@@ -556,8 +556,7 @@ export class BackgroundTaskManager {
     status: 'completed' | 'failed' | 'cancelled',
     resultOrError: string,
   ): void {
-    // Don't check for 'cancelled' here - cancel() may set status before calling
-    if (task.status === 'completed' || task.status === 'failed') {
+    if (task.status !== 'running' && task.status !== 'pending') {
       return; // Already completed
     }
 

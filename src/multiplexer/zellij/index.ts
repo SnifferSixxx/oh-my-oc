@@ -1,28 +1,21 @@
 /**
  * Zellij multiplexer implementation
  *
- * Creates a dedicated tab per agent type for sub-agent panes.
- * - Each agent type (explorer, fixer, etc.) gets its own named tab
- * - First pane per agent reuses the default pane from new-tab
- * - Subsequent panes for the same agent open in the same tab
- * - User stays in their original tab
+ * Creates a dedicated tab per background session for sub-agent panes.
+ * - Every background agent gets its own tab
+ * - Tabs are never split into multiple panes for additional agents
+ * - User stays in their original tab when possible
  */
 
 import { spawn } from 'bun';
 import type { MultiplexerLayout } from '../../config/schema';
 import type { Multiplexer, PaneResult } from '../types';
 
-interface ZellijTabInfo {
-  position: number;
-  name: string;
-  active: boolean;
+interface ZellijPaneInfo {
+  id: number;
   tab_id: number;
-}
-
-interface AgentTabState {
-  tabId: string;
-  firstPaneId: string | null;
-  firstPaneUsed: boolean;
+  is_focused: boolean;
+  is_plugin?: boolean;
 }
 
 export class ZellijMultiplexer implements Multiplexer {
@@ -32,12 +25,8 @@ export class ZellijMultiplexer implements Multiplexer {
   private hasChecked = false;
   private storedLayout: MultiplexerLayout;
   private storedMainPaneSize: number;
-  private agentTabs = new Map<string, AgentTabState>();
 
   constructor(layout: MultiplexerLayout = 'main-vertical', mainPaneSize = 60) {
-    // Note: Zellij does NOT support layout configuration like tmux.
-    // These params are accepted for API consistency but are no-ops.
-    // Zellij uses its own native layout algorithm for pane arrangement.
     this.storedLayout = layout;
     this.storedMainPaneSize = mainPaneSize;
   }
@@ -66,44 +55,26 @@ export class ZellijMultiplexer implements Multiplexer {
     try {
       // Extract agent name from "[agent] description" format
       const agentName = this.extractAgentName(description);
-
-      // Ensure a tab exists for this agent
-      let tabState = this.agentTabs.get(agentName);
-      if (!tabState) {
-        const result = await this.ensureAgentTab(zellij, agentName);
-        if (!result) return { success: false };
-        tabState = {
-          tabId: result.tabId,
-          firstPaneId: result.firstPaneId,
-          firstPaneUsed: false,
-        };
-        this.agentTabs.set(agentName, tabState);
-      }
-
-      // Use the default pane from new-tab for the first pane in this agent tab
-      if (!tabState.firstPaneUsed && tabState.firstPaneId) {
-        const success = await this.runInPane(
+      const originalTab = await this.getCurrentTabId(zellij);
+      try {
+        return await this.createSessionTab(
           zellij,
-          tabState.firstPaneId,
+          agentName,
           sessionId,
           serverUrl,
           description,
         );
-        if (success) {
-          tabState.firstPaneUsed = true;
-          return { success: true, paneId: tabState.firstPaneId };
+      } finally {
+        if (originalTab) {
+          await spawn(
+            [zellij, 'action', 'go-to-tab-by-id', String(originalTab)],
+            {
+              stdout: 'ignore',
+              stderr: 'ignore',
+            },
+          ).exited;
         }
-        // fall through to createPaneInAgentTab on failure
       }
-
-      // Create additional pane in this agent's tab
-      return await this.createPaneInAgentTab(
-        zellij,
-        tabState.tabId,
-        sessionId,
-        serverUrl,
-        description,
-      );
     } catch {
       return { success: false };
     }
@@ -123,175 +94,49 @@ export class ZellijMultiplexer implements Multiplexer {
     return match ? match[1] : 'agent';
   }
 
-  private async createPaneInAgentTab(
+  private async createSessionTab(
     zellij: string,
-    agentTabId: string,
+    agentName: string,
     sessionId: string,
     serverUrl: string,
-    description: string,
+    _description: string,
   ): Promise<PaneResult> {
+    const tabName = agentName;
     const opencodeCmd = `opencode attach ${serverUrl} --session ${sessionId}`;
-    const paneName = description.slice(0, 30).replace(/"/g, '\\"');
 
-    const currentTabId = await this.getCurrentTabId(zellij);
-    const inAgentTab = currentTabId === agentTabId;
-
-    if (inAgentTab) {
-      // Already in agent tab, create pane directly
-      const args = [
+    const createProc = spawn(
+      [
+        zellij,
         'action',
-        'new-pane',
+        'new-tab',
         '--name',
-        paneName,
+        tabName,
         '--close-on-exit',
         '--',
         'sh',
         '-c',
         opencodeCmd,
-      ];
-
-      const proc = spawn([zellij, ...args], {
+      ],
+      {
         stdout: 'pipe',
         stderr: 'pipe',
-      });
+      },
+    );
 
-      const exitCode = await proc.exited;
-      const stdout = await new Response(proc.stdout).text();
-      const paneId = stdout.trim();
+    const createExit = await createProc.exited;
+    if (createExit !== 0) return { success: false };
 
-      // Accept success if exit code is 0 and we got a valid pane ID
-      if (exitCode === 0 && paneId?.startsWith('terminal_')) {
-        return { success: true, paneId };
-      }
-      return { success: false };
-    }
+    const stdout = await new Response(createProc.stdout).text();
+    const tabId = stdout.trim();
+    if (!tabId) return { success: false };
 
-    // Get current tab before switching
-    const originalTab = await this.getCurrentTabId(zellij);
+    const firstPaneId = await this.getFocusedPaneInTab(zellij, tabId);
+    if (!firstPaneId) return { success: false };
 
-    // Switch to agent tab
-    await spawn([zellij, 'action', 'go-to-tab-by-id', agentTabId], {
-      stdout: 'ignore',
-      stderr: 'ignore',
-    }).exited;
-
-    // Create pane
-    const args = [
-      'action',
-      'new-pane',
-      '--name',
-      paneName,
-      '--close-on-exit',
-      '--',
-      'sh',
-      '-c',
-      opencodeCmd,
-    ];
-
-    const proc = spawn([zellij, ...args], {
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
-
-    const exitCode = await proc.exited;
-    const stdout = await new Response(proc.stdout).text();
-    const paneId = stdout.trim();
-
-    // Switch back to original tab
-    if (originalTab) {
-      await spawn([zellij, 'action', 'go-to-tab-by-id', String(originalTab)], {
-        stdout: 'ignore',
-        stderr: 'ignore',
-      }).exited;
-    }
-
-    // Accept success if exit code is 0 and we got a valid pane ID
-    if (exitCode === 0 && paneId?.startsWith('terminal_')) {
-      return { success: true, paneId };
-    }
-    return { success: false };
+    return { success: true, paneId: firstPaneId };
   }
 
-  private async runInPane(
-    zellij: string,
-    paneId: string,
-    sessionId: string,
-    serverUrl: string,
-    description: string,
-  ): Promise<boolean> {
-    try {
-      const opencodeCmd = `opencode attach ${serverUrl} --session ${sessionId}`;
-
-      await spawn([zellij, 'action', 'focus-pane', '--pane-id', paneId], {
-        stdout: 'ignore',
-        stderr: 'ignore',
-      }).exited;
-
-      await spawn(
-        [zellij, 'action', 'rename-pane', '--name', description.slice(0, 30)],
-        { stdout: 'ignore', stderr: 'ignore' },
-      ).exited;
-
-      await spawn([zellij, 'action', 'write-chars', opencodeCmd], {
-        stdout: 'ignore',
-        stderr: 'ignore',
-      }).exited;
-
-      await spawn([zellij, 'action', 'write-chars', '\n'], {
-        stdout: 'ignore',
-        stderr: 'ignore',
-      }).exited;
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private async ensureAgentTab(
-    zellij: string,
-    agentName: string,
-  ): Promise<{ tabId: string; firstPaneId: string } | null> {
-    try {
-      // Try to find existing tab for this agent
-      const existingTab = await this.findTabByName(zellij, agentName);
-      if (existingTab) {
-        const firstPane = await this.getFirstPaneInTab(
-          zellij,
-          existingTab.tabId,
-        );
-        return {
-          tabId: existingTab.tabId,
-          firstPaneId: firstPane || 'terminal_0',
-        };
-      }
-
-      // Get panes before creating tab
-      const beforePanes = await this.listPanes(zellij);
-
-      // Create new tab named after the agent
-      const createProc = spawn(
-        [zellij, 'action', 'new-tab', '--name', agentName],
-        { stdout: 'pipe', stderr: 'pipe' },
-      );
-      const createExit = await createProc.exited;
-      if (createExit !== 0) return null;
-
-      // Get the new tab info
-      const newTab = await this.findTabByName(zellij, agentName);
-      if (!newTab) return null;
-
-      // Get the new pane
-      const afterPanes = await this.listPanes(zellij);
-      const newPane = afterPanes.find((p) => !beforePanes.includes(p));
-
-      return { tabId: newTab.tabId, firstPaneId: newPane || 'terminal_0' };
-    } catch {
-      return null;
-    }
-  }
-
-  private async getFirstPaneInTab(
+  private async getFocusedPaneInTab(
     zellij: string,
     tabId: string,
   ): Promise<string | null> {
@@ -311,66 +156,12 @@ export class ZellijMultiplexer implements Multiplexer {
       }).exited;
     }
 
-    return panes[0] || null;
-  }
+    const focusedPane = panes.find(
+      (pane) =>
+        pane.tab_id === Number(tabId) && pane.is_focused && !pane.is_plugin,
+    );
 
-  private async findTabByName(
-    zellij: string,
-    name: string,
-  ): Promise<{ tabId: string; name: string } | null> {
-    try {
-      const proc = spawn([zellij, 'action', 'list-tabs', '--json'], {
-        stdout: 'pipe',
-        stderr: 'pipe',
-      });
-
-      const exitCode = await proc.exited;
-      if (exitCode !== 0) return this.findTabByNameText(zellij, name);
-
-      const stdout = await new Response(proc.stdout).text();
-
-      try {
-        const tabs: ZellijTabInfo[] = JSON.parse(stdout);
-        for (const tab of tabs) {
-          if (tab.name === name) {
-            return { tabId: String(tab.tab_id), name: tab.name };
-          }
-        }
-      } catch {
-        return this.findTabByNameText(zellij, name);
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  private async findTabByNameText(
-    zellij: string,
-    name: string,
-  ): Promise<{ tabId: string; name: string } | null> {
-    try {
-      const proc = spawn([zellij, 'action', 'list-tabs'], {
-        stdout: 'pipe',
-        stderr: 'pipe',
-      });
-
-      const exitCode = await proc.exited;
-      if (exitCode !== 0) return null;
-
-      const stdout = await new Response(proc.stdout).text();
-      const lines = stdout.split('\n');
-
-      for (const line of lines) {
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 3 && parts[2] === name) {
-          return { tabId: parts[0], name: parts[2] };
-        }
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    return focusedPane ? `terminal_${focusedPane.id}` : null;
   }
 
   private async getCurrentTabId(zellij: string): Promise<string | null> {
@@ -395,9 +186,9 @@ export class ZellijMultiplexer implements Multiplexer {
     }
   }
 
-  private async listPanes(zellij: string): Promise<string[]> {
+  private async listPanes(zellij: string): Promise<ZellijPaneInfo[]> {
     try {
-      const proc = spawn([zellij, 'action', 'list-panes'], {
+      const proc = spawn([zellij, 'action', 'list-panes', '--json'], {
         stdout: 'pipe',
         stderr: 'pipe',
       });
@@ -406,11 +197,7 @@ export class ZellijMultiplexer implements Multiplexer {
       if (exitCode !== 0) return [];
 
       const stdout = await new Response(proc.stdout).text();
-      return stdout
-        .split('\n')
-        .slice(1)
-        .map((line) => line.trim().split(/\s+/)[0])
-        .filter((id) => id?.startsWith('terminal_'));
+      return JSON.parse(stdout) as ZellijPaneInfo[];
     } catch {
       return [];
     }
@@ -448,6 +235,8 @@ export class ZellijMultiplexer implements Multiplexer {
     _layout: MultiplexerLayout,
     _mainPaneSize: number,
   ): Promise<void> {
+    void this.storedLayout;
+    void this.storedMainPaneSize;
     // No-op for zellij - zellij uses its own native layout algorithm.
     // Unlike tmux, zellij does not support programmatic layout control.
   }
