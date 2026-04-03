@@ -56,6 +56,7 @@ export class ZellijMultiplexer implements Multiplexer {
       // Extract agent name from "[agent] description" format
       const agentName = this.extractAgentName(description);
       const originalTab = await this.getCurrentTabId(zellij);
+
       try {
         return await this.createSessionTab(
           zellij,
@@ -84,6 +85,15 @@ export class ZellijMultiplexer implements Multiplexer {
     const zellij = await this.getBinary();
     if (!zellij) return;
     await spawn([zellij, 'action', 'rename-tab', name], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+    }).exited;
+  }
+
+  async renameTab(tabId: string, name: string): Promise<void> {
+    const zellij = await this.getBinary();
+    if (!zellij) return;
+    await spawn([zellij, 'action', 'rename-tab-by-id', tabId, name], {
       stdout: 'ignore',
       stderr: 'ignore',
     }).exited;
@@ -130,31 +140,17 @@ export class ZellijMultiplexer implements Multiplexer {
     const tabId = stdout.trim();
     if (!tabId) return { success: false };
 
-    const firstPaneId = await this.getFocusedPaneInTab(zellij, tabId);
+    const firstPaneId = await this.getPaneInTab(zellij, tabId);
     if (!firstPaneId) return { success: false };
 
-    return { success: true, paneId: firstPaneId };
+    return { success: true, paneId: firstPaneId, tabId };
   }
 
-  private async getFocusedPaneInTab(
+  private async getPaneInTab(
     zellij: string,
     tabId: string,
   ): Promise<string | null> {
-    const originalTab = await this.getCurrentTabId(zellij);
-    await spawn([zellij, 'action', 'go-to-tab-by-id', tabId], {
-      stdout: 'ignore',
-      stderr: 'ignore',
-    }).exited;
-
     const panes = await this.listPanes(zellij);
-
-    // Restore original tab
-    if (originalTab) {
-      await spawn([zellij, 'action', 'go-to-tab-by-id', String(originalTab)], {
-        stdout: 'ignore',
-        stderr: 'ignore',
-      }).exited;
-    }
 
     const focusedPane = panes.find(
       (pane) =>
@@ -175,12 +171,8 @@ export class ZellijMultiplexer implements Multiplexer {
       if (exitCode !== 0) return null;
 
       const stdout = await new Response(proc.stdout).text();
-      try {
-        const info = JSON.parse(stdout);
-        return String(info.tab_id);
-      } catch {
-        return null;
-      }
+      const info = JSON.parse(stdout) as { tab_id?: number };
+      return info.tab_id !== undefined ? String(info.tab_id) : null;
     } catch {
       return null;
     }
@@ -223,6 +215,25 @@ export class ZellijMultiplexer implements Multiplexer {
         [zellij, 'action', 'close-pane', '--pane-id', paneId],
         { stdout: 'pipe', stderr: 'pipe' },
       );
+
+      const exitCode = await proc.exited;
+      return exitCode === 0 || exitCode === 1;
+    } catch {
+      return false;
+    }
+  }
+
+  async closeTab(tabId: string): Promise<boolean> {
+    if (!tabId || tabId === 'unknown') return true;
+
+    const zellij = await this.getBinary();
+    if (!zellij) return false;
+
+    try {
+      const proc = spawn([zellij, 'action', 'close-tab-by-id', tabId], {
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
 
       const exitCode = await proc.exited;
       return exitCode === 0 || exitCode === 1;

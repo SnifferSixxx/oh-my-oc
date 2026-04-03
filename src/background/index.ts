@@ -3,7 +3,5 @@ export {
   BackgroundTaskManager,
   type LaunchOptions,
 } from './background-manager';
-export {
-  MultiplexerSessionManager,
-} from './multiplexer-session-manager';
+export { MultiplexerSessionManager } from './multiplexer-session-manager';
 export { SubagentDepthTracker } from './subagent-depth';

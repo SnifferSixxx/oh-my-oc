@@ -13,6 +13,7 @@ type OpencodeClient = PluginInput['client'];
 interface TrackedSession {
   sessionId: string;
   paneId: string;
+  tabId?: string;
   parentId: string;
   title: string;
   createdAt: number;
@@ -126,6 +127,7 @@ export class MultiplexerSessionManager {
       this.sessions.set(sessionId, {
         sessionId,
         paneId: paneResult.paneId,
+        tabId: paneResult.tabId,
         parentId,
         title,
         createdAt: now,
@@ -256,7 +258,6 @@ export class MultiplexerSessionManager {
     if (this.closingSessions.has(sessionId)) return;
 
     this.closingSessions.add(sessionId);
-    this.sessions.delete(sessionId);
 
     log('[multiplexer-session-manager] closing session pane', {
       sessionId,
@@ -264,9 +265,24 @@ export class MultiplexerSessionManager {
     });
 
     try {
-      await this.multiplexer.closePane(tracked.paneId);
+      if (tracked.tabId && this.multiplexer.closeTab) {
+        await this.multiplexer.closeTab(tracked.tabId).catch((err) => {
+          log('[multiplexer-session-manager] close tab error', {
+            tabId: tracked.tabId,
+            error: String(err),
+          });
+        });
+      } else {
+        await this.multiplexer.closePane(tracked.paneId).catch((err) => {
+          log('[multiplexer-session-manager] close pane error', {
+            paneId: tracked.paneId,
+            error: String(err),
+          });
+        });
+      }
     } finally {
       this.closingSessions.delete(sessionId);
+      this.sessions.delete(sessionId);
     }
 
     if (this.sessions.size === 0) {
@@ -286,14 +302,22 @@ export class MultiplexerSessionManager {
         count: this.sessions.size,
       });
       const multiplexer = this.multiplexer;
-      const closePromises = Array.from(this.sessions.values()).map((s) =>
-        multiplexer.closePane(s.paneId).catch((err) =>
+      const closePromises = Array.from(this.sessions.values()).map((s) => {
+        if (s.tabId && multiplexer.closeTab) {
+          return multiplexer.closeTab(s.tabId).catch((err) =>
+            log('[multiplexer-session-manager] cleanup error for tab', {
+              tabId: s.tabId,
+              error: String(err),
+            }),
+          );
+        }
+        return multiplexer.closePane(s.paneId).catch((err) =>
           log('[multiplexer-session-manager] cleanup error for pane', {
             paneId: s.paneId,
             error: String(err),
           }),
-        ),
-      );
+        );
+      });
       await Promise.all(closePromises);
       this.sessions.clear();
     }

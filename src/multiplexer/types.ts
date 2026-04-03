@@ -10,6 +10,7 @@ import type { MultiplexerConfig, MultiplexerLayout } from '../config/schema';
 export interface PaneResult {
   success: boolean;
   paneId?: string;
+  tabId?: string;
 }
 
 /**
@@ -48,6 +49,16 @@ export interface Multiplexer {
    * @returns true if successfully closed
    */
   closePane(paneId: string): Promise<boolean>;
+
+  /**
+   * Rename a specific tab by ID.
+   */
+  renameTab?(tabId: string, name: string): Promise<void>;
+
+  /**
+   * Close a tab by its ID when the multiplexer supports it.
+   */
+  closeTab?(tabId: string): Promise<boolean>;
 
   /**
    * Apply layout to rebalance panes

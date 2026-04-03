@@ -15,7 +15,11 @@ import {
   ForegroundFallbackManager,
 } from './hooks';
 import { createBuiltinMcps } from './mcp';
-import { getMultiplexer, startAvailabilityCheck } from './multiplexer';
+import {
+  getMultiplexer,
+  startAvailabilityCheck,
+  ZellijMultiplexer,
+} from './multiplexer';
 import {
   ast_grep_replace,
   ast_grep_search,
@@ -93,6 +97,17 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   // Start background availability check if enabled
   if (multiplexerEnabled) {
     startAvailabilityCheck(multiplexerConfig);
+  }
+
+  const childSessionIds = new Set<string>();
+  const tabNamesBySessionId = new Map<string, string>();
+
+  if (
+    multiplexerEnabled &&
+    multiplexer instanceof ZellijMultiplexer &&
+    multiplexer.isInsideSession()
+  ) {
+    multiplexer.renameCurrentTab('opencode').catch(() => {});
   }
 
   const backgroundManager = new BackgroundTaskManager(
@@ -359,6 +374,68 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
 
       // Handle auto-update checking
       await autoUpdateChecker.event(input);
+
+      // Track child sessions so we don't rename background tabs here
+      if (
+        multiplexerEnabled &&
+        multiplexer instanceof ZellijMultiplexer &&
+        multiplexer.isInsideSession()
+      ) {
+        const ev = input.event as {
+          type: string;
+          properties?: {
+            info?: {
+              id?: string;
+              parentID?: string;
+              agent?: string;
+              role?: string;
+              sessionID?: string;
+            };
+            sessionID?: string;
+            status?: { type?: string };
+          };
+        };
+
+        if (ev.type === 'session.created' && ev.properties?.info?.id) {
+          const info = ev.properties.info;
+          if (info.parentID && typeof info.id === 'string') {
+            childSessionIds.add(info.id);
+          }
+        }
+
+        if (ev.type === 'message.updated') {
+          const info = ev.properties?.info;
+          const sessionID = info?.sessionID;
+          if (
+            info?.role === 'user' &&
+            typeof info.agent === 'string' &&
+            sessionID &&
+            !childSessionIds.has(sessionID) &&
+            tabNamesBySessionId.get(sessionID) !== info.agent
+          ) {
+            tabNamesBySessionId.set(sessionID, info.agent);
+            multiplexer.renameCurrentTab(info.agent).catch(() => {});
+          }
+        }
+
+        if (
+          (ev.type === 'session.status' &&
+            ev.properties?.status?.type === 'idle') ||
+          ev.type === 'session.deleted'
+        ) {
+          const sessionID = ev.properties?.sessionID ?? ev.properties?.info?.id;
+          if (sessionID && !childSessionIds.has(sessionID)) {
+            if (tabNamesBySessionId.get(sessionID) !== 'opencode') {
+              tabNamesBySessionId.set(sessionID, 'opencode');
+              multiplexer.renameCurrentTab('opencode').catch(() => {});
+            }
+          }
+          if (ev.type === 'session.deleted' && sessionID) {
+            childSessionIds.delete(sessionID);
+            tabNamesBySessionId.delete(sessionID);
+          }
+        }
+      }
 
       // Handle multiplexer pane spawning for OpenCode's Task tool sessions
       await multiplexerSessionManager.onSessionCreated(

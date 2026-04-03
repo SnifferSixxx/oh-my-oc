@@ -282,9 +282,7 @@ export class CouncilManager {
       }
 
       if (this.multiplexerEnabled) {
-        await new Promise((r) =>
-          setTimeout(r, MULTIPLEXER_SPAWN_DELAY_MS),
-        );
+        await new Promise((r) => setTimeout(r, MULTIPLEXER_SPAWN_DELAY_MS));
       }
 
       const body: PromptBody = {
