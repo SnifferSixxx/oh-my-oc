@@ -183,6 +183,10 @@ export function createAgents(config?: PluginConfig): AgentDefinition[] {
     orchestratorModel,
     orchestratorPrompts.prompt,
     orchestratorPrompts.appendPrompt,
+    {
+      councilEnabled: !!config?.council,
+      engramEnabled: !!config?.engram,
+    },
   );
   applyDefaultPermissions(orchestrator, orchestratorOverride?.skills);
   if (orchestratorOverride) {

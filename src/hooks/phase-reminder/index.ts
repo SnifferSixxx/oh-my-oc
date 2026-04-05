@@ -34,13 +34,17 @@ interface MessageWithParts {
  * Creates the experimental.chat.messages.transform hook for phase reminder injection.
  * This hook runs right before sending to API, so it doesn't affect UI display.
  * Only injects for the orchestrator agent.
+ *
+ * @param enabled - When false, the hook is a no-op (default: true)
  */
-export function createPhaseReminderHook() {
+export function createPhaseReminderHook(enabled = true) {
   return {
     'experimental.chat.messages.transform': async (
       _input: Record<string, never>,
       output: { messages: MessageWithParts[] },
     ): Promise<void> => {
+      if (!enabled) return;
+
       const { messages } = output;
 
       if (messages.length === 0) {

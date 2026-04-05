@@ -181,6 +181,10 @@ export const PluginConfigSchema = z.object({
   background: BackgroundTaskConfigSchema.optional(),
   fallback: FailoverConfigSchema.optional(),
   council: CouncilConfigSchema.optional(),
+  /** Enable lightweight Engram memory protocol in orchestrator prompt. */
+  engram: z.boolean().optional(),
+  /** Enable phase reminder injection on orchestrator messages (default: true). */
+  phaseReminder: z.boolean().optional(),
 });
 
 export type PluginConfig = z.infer<typeof PluginConfigSchema>;

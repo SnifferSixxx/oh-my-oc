@@ -11,7 +11,6 @@ import {
   createFilterAvailableSkillsHook,
   createJsonErrorRecoveryHook,
   createPhaseReminderHook,
-  createPostFileToolNudgeHook,
   ForegroundFallbackManager,
 } from './hooks';
 import { createBuiltinMcps } from './mcp';
@@ -149,17 +148,16 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     autoUpdate: true,
   });
 
-  // Initialize phase reminder hook for workflow compliance
-  const phaseReminderHook = createPhaseReminderHook();
+  // Initialize phase reminder hook for workflow compliance (opt-out via config)
+  const phaseReminderHook = createPhaseReminderHook(
+    config.phaseReminder !== false,
+  );
 
   // Initialize available skills filter hook
   const filterAvailableSkillsHook = createFilterAvailableSkillsHook(
     ctx,
     config,
   );
-
-  // Initialize post-file-tool nudge hook
-  const postFileToolNudgeHook = createPostFileToolNudgeHook();
 
   const chatHeadersHook = createChatHeadersHook(ctx);
 
@@ -525,19 +523,6 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           title: string;
           output: unknown;
           metadata: unknown;
-        },
-      );
-
-      await postFileToolNudgeHook['tool.execute.after'](
-        input as {
-          tool: string;
-          sessionID?: string;
-          callID?: string;
-        },
-        output as {
-          title: string;
-          output: string;
-          metadata: Record<string, unknown>;
         },
       );
     },
