@@ -5,6 +5,7 @@ import { loadPluginConfig, type MultiplexerConfig } from './config';
 import { parseList } from './config/agent-mcps';
 import { CouncilManager } from './council';
 import {
+  createAnthropicClaudeCodePromptHook,
   createAutoUpdateCheckerHook,
   createChatHeadersHook,
   createDelegateTaskRetryHook,
@@ -161,6 +162,9 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   );
 
   const chatHeadersHook = createChatHeadersHook(ctx);
+  const anthropicClaudeCodePromptHook = createAnthropicClaudeCodePromptHook(
+    config.anthropicClaudeCodeSystemPrompt === true,
+  );
 
   // Initialize delegate-task retry guidance hook
   const delegateTaskRetryHook = createDelegateTaskRetryHook(ctx);
@@ -504,6 +508,9 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         input,
         typedOutput,
       );
+      await anthropicClaudeCodePromptHook[
+        'experimental.chat.messages.transform'
+      ](input, typedOutput);
       await filterAvailableSkillsHook['experimental.chat.messages.transform'](
         input,
         typedOutput,

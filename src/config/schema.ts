@@ -185,6 +185,11 @@ export const PluginConfigSchema = z.object({
   engram: z.boolean().optional(),
   /** Enable phase reminder injection on orchestrator messages (default: true). */
   phaseReminder: z.boolean().optional(),
+  /**
+   * Prepend a hidden Claude Code identity prompt for Anthropic requests.
+   * Disabled by default because it may not match Anthropic's intended usage.
+   */
+  anthropicClaudeCodeSystemPrompt: z.boolean().optional(),
 });
 
 export type PluginConfig = z.infer<typeof PluginConfigSchema>;

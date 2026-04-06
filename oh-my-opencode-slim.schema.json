@@ -555,6 +555,9 @@
     },
     "phaseReminder": {
       "type": "boolean"
+    },
+    "anthropicClaudeCodeSystemPrompt": {
+      "type": "boolean"
     }
   },
   "title": "oh-my-opencode-slim",

@@ -1,3 +1,7 @@
+export {
+  CLAUDE_CODE_SYSTEM_PROMPT,
+  createAnthropicClaudeCodePromptHook,
+} from './anthropic-claude-code-prompt';
 export type { AutoUpdateCheckerOptions } from './auto-update-checker';
 export { createAutoUpdateCheckerHook } from './auto-update-checker';
 export { createChatHeadersHook } from './chat-headers';
