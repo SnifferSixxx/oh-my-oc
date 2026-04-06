@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { PluginConfig } from '../config';
 import { DEFAULT_MODELS, SUBAGENT_NAMES } from '../config';
 import { createAgents, getAgentConfigs, isSubagent } from './index';
+import { buildOrchestratorPrompt, ENGRAM_LITE_PROTOCOL } from './orchestrator';
 
 describe('agent alias backward compatibility', () => {
   test("applies 'explore' config to 'explorer' agent", () => {
@@ -161,6 +162,26 @@ describe('orchestrator agent', () => {
       { id: 'openai/gpt-4' },
     ]);
     expect(orchestrator?.config.model).toBeUndefined();
+  });
+
+  test('orchestrator prompt includes council only when enabled', () => {
+    const withoutCouncil = buildOrchestratorPrompt();
+    const withCouncil = buildOrchestratorPrompt({ councilEnabled: true });
+
+    expect(withoutCouncil).not.toContain('@council');
+    expect(withCouncil).toContain('@council');
+  });
+
+  test('orchestrator prompt includes Engram guidance only when enabled', () => {
+    const withoutEngram = buildOrchestratorPrompt();
+    const withEngram = buildOrchestratorPrompt({ engramEnabled: true });
+
+    expect(withoutEngram).not.toContain(ENGRAM_LITE_PROTOCOL);
+    expect(withEngram).toContain(ENGRAM_LITE_PROTOCOL);
+    expect(withEngram).toContain('Use this protocol only when mem_* tools');
+    expect(withEngram).not.toContain(
+      'You have access to persistent memory via mem_* tools',
+    );
   });
 });
 

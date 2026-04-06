@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { DEFAULT_AGENT_MCPS, parseList } from './agent-mcps';
+import { DEFAULT_AGENT_MCPS, getAgentMcpList, parseList } from './agent-mcps';
 
 describe('parseList', () => {
   test('empty list returns empty array', () => {
@@ -23,6 +23,21 @@ describe('parseList', () => {
         'custom-mcp',
       ]),
     ).toEqual([]);
+  });
+
+  test('orchestrator auto-allows Engram when engram is enabled', () => {
+    expect(getAgentMcpList('orchestrator', { engram: true })).toEqual([
+      'engram',
+    ]);
+  });
+
+  test('explicit orchestrator mcps override Engram auto-allow', () => {
+    expect(
+      getAgentMcpList('orchestrator', {
+        engram: true,
+        agents: { orchestrator: { mcps: ['context7'] } },
+      }),
+    ).toEqual(['context7']);
   });
 
   test('wildcard with exclusions', () => {

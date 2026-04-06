@@ -343,7 +343,7 @@ export class BackgroundTaskManager {
         parts: [{ type: 'text' as const, text: task.prompt }],
       } as PromptBody) as unknown as PromptBody;
 
-      const fallbackEnabled = this.config?.fallback?.enabled ?? true;
+      const fallbackEnabled = this.config?.fallback?.enabled ?? false;
       const timeoutMs = fallbackEnabled
         ? (this.config?.fallback?.timeoutMs ?? FALLBACK_FAILOVER_TIMEOUT_MS)
         : 0; // 0 = no timeout when fallback disabled
@@ -491,7 +491,11 @@ export class BackgroundTaskManager {
     if (!task) return;
 
     // Only handle if task is still active
-    if (task.status === 'running' || task.status === 'pending') {
+    if (
+      task.status === 'running' ||
+      task.status === 'pending' ||
+      task.status === 'starting'
+    ) {
       log(`[background-manager] Session deleted, cancelling task: ${task.id}`);
 
       // Mark as cancelled
@@ -556,7 +560,13 @@ export class BackgroundTaskManager {
     status: 'completed' | 'failed' | 'cancelled',
     resultOrError: string,
   ): void {
-    if (task.status !== 'running' && task.status !== 'pending') {
+    const alreadyFinalized =
+      task.completedAt !== undefined &&
+      (task.status === 'completed' ||
+        task.status === 'failed' ||
+        task.status === 'cancelled');
+
+    if (alreadyFinalized) {
       return; // Already completed
     }
 

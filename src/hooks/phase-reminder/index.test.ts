@@ -57,4 +57,20 @@ describe('createPhaseReminderHook', () => {
     );
     expect(output.messages[0].parts[0].text).not.toContain(PHASE_REMINDER);
   });
+
+  test('is a no-op when disabled', async () => {
+    const hook = createPhaseReminderHook(false);
+    const output = {
+      messages: [
+        {
+          info: { role: 'user', agent: 'orchestrator' },
+          parts: [{ type: 'text', text: 'hello' }],
+        },
+      ],
+    };
+
+    await hook['experimental.chat.messages.transform']({}, output);
+
+    expect(output.messages[0].parts[0].text).toBe('hello');
+  });
 });

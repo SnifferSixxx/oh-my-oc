@@ -11,6 +11,7 @@ import {
   createFilterAvailableSkillsHook,
   createJsonErrorRecoveryHook,
   createPhaseReminderHook,
+  createPostFileToolNudgeHook,
   ForegroundFallbackManager,
 } from './hooks';
 import { createBuiltinMcps } from './mcp';
@@ -58,7 +59,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       runtimeChains[agentDef.name] = agentDef._modelArray.map((m) => m.id);
     }
   }
-  if (config.fallback?.enabled !== false) {
+  if (config.fallback?.enabled === true) {
     const chains =
       (config.fallback?.chains as Record<string, string[] | undefined>) ?? {};
     for (const [agentName, chainModels] of Object.entries(chains)) {
@@ -167,11 +168,14 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   // Initialize JSON parse error recovery hook
   const jsonErrorRecoveryHook = createJsonErrorRecoveryHook(ctx);
 
+  // Initialize post-file tool nudge hook
+  const postFileToolNudgeHook = createPostFileToolNudgeHook();
+
   // Initialize foreground fallback manager for runtime model switching
   const foregroundFallback = new ForegroundFallbackManager(
     ctx.client,
     runtimeChains,
-    config.fallback?.enabled !== false && Object.keys(runtimeChains).length > 0,
+    config.fallback?.enabled === true && Object.keys(runtimeChains).length > 0,
   );
 
   return {
@@ -239,7 +243,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       //
       // Runtime failover on API errors (e.g. rate limits mid-conversation)
       // is handled separately by ForegroundFallbackManager via the event hook.
-      const fallbackChainsEnabled = config.fallback?.enabled !== false;
+      const fallbackChainsEnabled = config.fallback?.enabled === true;
       const fallbackChains = fallbackChainsEnabled
         ? ((config.fallback?.chains as Record<string, string[] | undefined>) ??
           {})
@@ -523,6 +527,19 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           title: string;
           output: unknown;
           metadata: unknown;
+        },
+      );
+
+      await postFileToolNudgeHook['tool.execute.after'](
+        input as {
+          tool: string;
+          sessionID?: string;
+          callID?: string;
+        },
+        output as {
+          title: string;
+          output: string;
+          metadata: Record<string, unknown>;
         },
       );
     },

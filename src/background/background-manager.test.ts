@@ -518,6 +518,7 @@ describe('BackgroundTaskManager', () => {
           enabled: true,
           timeoutMs: 15000,
           retryDelayMs: 0,
+          retry_on_empty: true,
           chains: {
             explorer: ['openai/gpt-5.4', 'opencode/gpt-5-nano'],
           },
@@ -558,6 +559,7 @@ describe('BackgroundTaskManager', () => {
           enabled: true,
           timeoutMs: 15000,
           retryDelayMs: 0,
+          retry_on_empty: true,
           chains: {
             explorer: ['openai/gpt-5.4', 'opencode/gpt-5-nano'],
           },
@@ -770,6 +772,7 @@ describe('BackgroundTaskManager', () => {
           enabled: true,
           timeoutMs: 15000,
           retryDelayMs: 0,
+          retry_on_empty: true,
           chains: {
             explorer: ['openai/gpt-5.4', 'opencode/gpt-5-nano'],
           },
@@ -1413,7 +1416,11 @@ describe('BackgroundTaskManager', () => {
         throw new Error('Expected sessionId to be defined');
 
       // Explorer gets tools DISABLED
-      const explorerPromptCall = promptCalls[2];
+      const updatedPromptCalls = ctx.client.session.prompt.mock.calls as Array<
+        [{ body: { tools?: Record<string, boolean> } }]
+      >;
+      const explorerPromptCall =
+        updatedPromptCalls[updatedPromptCalls.length - 1];
       expect(explorerPromptCall[0].body.tools).toEqual({
         background_task: false,
         task: false,

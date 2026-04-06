@@ -389,7 +389,7 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "default": true,
+          "default": false,
           "type": "boolean"
         },
         "timeoutMs": {
@@ -549,6 +549,12 @@
         "master",
         "presets"
       ]
+    },
+    "engram": {
+      "type": "boolean"
+    },
+    "phaseReminder": {
+      "type": "boolean"
     }
   },
   "title": "oh-my-opencode-slim",

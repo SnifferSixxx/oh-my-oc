@@ -166,7 +166,10 @@ export const ENGRAM_LITE_PROTOCOL = `<Memory>
 
 ## Engram Lite — Persistent Memory Protocol
 
-You have access to persistent memory via mem_* tools (Engram MCP).
+Use this protocol only when mem_* tools are available in the current
+environment (for example via an Engram MCP configured outside this plugin).
+Do not claim memory access or call mem_* tools unless those tools are actually
+present.
 
 ### Session start
 Call \`mem_context\` to recover recent session context.
@@ -205,7 +208,7 @@ const CORE_AGENTS = [
 export interface OrchestratorOptions {
   /** Include @council agent description (default: false). */
   councilEnabled?: boolean;
-  /** Append Engram lite memory protocol (default: false). */
+  /** Append Engram-aware memory protocol guidance (default: false). */
   engramEnabled?: boolean;
 }
 

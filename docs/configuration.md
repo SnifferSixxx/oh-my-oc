@@ -91,7 +91,7 @@ All config files support **JSONC** (JSON with Comments):
 | `multiplexer.layout` | string | `"main-vertical"` | Retained for schema consistency; Zellij ignores tmux-style layout control |
 | `multiplexer.main_pane_size` | number | `60` | Retained for schema consistency; Zellij ignores tmux-style main pane sizing |
 | `disabled_mcps` | string[] | `[]` | MCP server IDs to disable globally |
-| `fallback.enabled` | boolean | `false` | Enable model failover on timeout/error |
+| `fallback.enabled` | boolean | `false` | Enable model failover on timeout/error. Disabled by default, so fallback chains only run when you opt in |
 | `fallback.timeoutMs` | number | `15000` | Time before aborting and trying next model |
 | `fallback.retryDelayMs` | number | `500` | Delay between retry attempts |
 | `fallback.chains.<agent>` | string[] | — | Ordered fallback model IDs for an agent |

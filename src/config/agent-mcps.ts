@@ -64,6 +64,10 @@ export function getAgentMcpList(
     return agentConfig.mcps;
   }
 
+  if (agentName === 'orchestrator' && config?.engram) {
+    return ['engram'];
+  }
+
   const defaultMcps = DEFAULT_AGENT_MCPS[agentName as AgentName];
   return defaultMcps ?? [];
 }

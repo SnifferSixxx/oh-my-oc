@@ -71,21 +71,21 @@ export function getLiteConfigJsonc(): string {
 }
 
 export function getExistingLiteConfigPath(): string {
-  const jsonPath = getLiteConfig();
-  if (existsSync(jsonPath)) return jsonPath;
-
   const jsoncPath = getLiteConfigJsonc();
   if (existsSync(jsoncPath)) return jsoncPath;
+
+  const jsonPath = getLiteConfig();
+  if (existsSync(jsonPath)) return jsonPath;
 
   return jsonPath;
 }
 
 export function getExistingConfigPath(): string {
-  const jsonPath = getConfigJson();
-  if (existsSync(jsonPath)) return jsonPath;
-
   const jsoncPath = getConfigJsonc();
   if (existsSync(jsoncPath)) return jsoncPath;
+
+  const jsonPath = getConfigJson();
+  if (existsSync(jsonPath)) return jsonPath;
 
   return jsonPath;
 }

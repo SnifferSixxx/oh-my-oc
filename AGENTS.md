@@ -121,12 +121,10 @@ Session Deleted Externally:
 
 ### Key Implementation Details
 
-**1. Graceful Shutdown (src/utils/tmux.ts)**
+**1. Multiplexer Cleanup (src/multiplexer/zellij/index.ts)**
 ```typescript
-// Always send Ctrl+C before killing pane
-spawn([tmux, "send-keys", "-t", paneId, "C-c"])
-await delay(250)
-spawn([tmux, "kill-pane", "-t", paneId])
+// Close the dedicated Zellij pane/tab after task cleanup
+await multiplexer.closePane(paneId)
 ```
 
 **2. Session Abort Timing (src/background/background-manager.ts)**
@@ -137,9 +135,9 @@ spawn([tmux, "kill-pane", "-t", paneId])
 **3. Event Handlers (src/index.ts)**
 Both handlers must be wired up:
 - `backgroundManager.handleSessionDeleted()` - cleans up task state
-- `tmuxSessionManager.onSessionDeleted()` - closes tmux pane
+- `multiplexerSessionManager.onSessionDeleted()` - closes the Zellij pane
 
-### Testing Tmux Integration
+### Testing Multiplexer Integration
 
 After making changes to session management:
 
@@ -154,9 +152,8 @@ bun run build
 @explorer count files in src/
 @librarian search for Bun documentation
 
-# 4. Verify no orphans
-ps aux | grep "opencode attach" | grep -v grep
-# Should return 0 processes after tasks complete
+# 4. Verify panes are cleaned up after tasks complete
+zellij action query-tab-names
 ```
 
 ### Common Issues
@@ -165,9 +162,9 @@ ps aux | grep "opencode attach" | grep -v grep
 - Check that `session.abort()` is called after result extraction
 - Verify `session.deleted` handler is wired in src/index.ts
 
-**Orphaned opencode attach processes:**
-- Ensure graceful shutdown sends Ctrl+C before kill-pane
-- Check that tmux pane closes before process termination
+**Background panes never appear:**
+- Ensure OpenCode was started with `--port` and `OPENCODE_PORT` matches
+- Confirm you're running inside Zellij (`echo "$ZELLIJ"`)
 
 ## Pre-Push Code Review
 

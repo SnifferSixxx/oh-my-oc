@@ -151,7 +151,7 @@ export const BackgroundTaskConfigSchema = z.object({
 export type BackgroundTaskConfig = z.infer<typeof BackgroundTaskConfigSchema>;
 
 export const FailoverConfigSchema = z.object({
-  enabled: z.boolean().default(true),
+  enabled: z.boolean().default(false),
   timeoutMs: z.number().min(0).default(15000),
   retryDelayMs: z.number().min(0).default(500),
   chains: FallbackChainsSchema.default({}),
@@ -181,7 +181,7 @@ export const PluginConfigSchema = z.object({
   background: BackgroundTaskConfigSchema.optional(),
   fallback: FailoverConfigSchema.optional(),
   council: CouncilConfigSchema.optional(),
-  /** Enable lightweight Engram memory protocol in orchestrator prompt. */
+  /** Enable Engram-aware guidance in the orchestrator prompt. */
   engram: z.boolean().optional(),
   /** Enable phase reminder injection on orchestrator messages (default: true). */
   phaseReminder: z.boolean().optional(),

@@ -57,7 +57,7 @@ bunx oh-my-opencode-slim@latest install --reset
 
 ### After Installation
 
-The installer generates an OpenAI configuration by default (using `gpt-5.4` and `gpt-5-codex` models). To use alternative providers like Kimi, GitHub Copilot, or ZAI Coding Plan, see **[Provider Configurations](provider-configurations.md)** for step-by-step instructions.
+The installer generates an OpenAI configuration by default (using `gpt-5.4` and `gpt-5.4-mini` models). To use alternative providers like Kimi, GitHub Copilot, or ZAI Coding Plan, see **[Provider Configurations](provider-configurations.md)** for step-by-step instructions.
 
 Authenticate with your provider:
 
