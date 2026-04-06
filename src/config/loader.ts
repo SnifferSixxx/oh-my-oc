@@ -5,6 +5,8 @@ import { getConfigSearchDirs } from '../cli/paths';
 import { type PluginConfig, PluginConfigSchema } from './schema';
 
 const PROMPTS_DIR_NAME = 'oh-my-opencode-slim';
+const PREFERRED_CONFIG_BASE_NAME = 'oh-my-oc';
+const LEGACY_CONFIG_BASE_NAME = 'oh-my-opencode-slim';
 
 /**
  * Load and validate plugin configuration from a specific file path.
@@ -56,24 +58,27 @@ function findConfigPath(basePath: string): string | null {
   const jsoncPath = `${basePath}.jsonc`;
   const jsonPath = `${basePath}.json`;
 
-  // Prefer .jsonc over .json
-  if (fs.existsSync(jsoncPath)) {
-    return jsoncPath;
-  }
-  if (fs.existsSync(jsonPath)) {
-    return jsonPath;
-  }
+  if (fs.existsSync(jsoncPath)) return jsoncPath;
+  if (fs.existsSync(jsonPath)) return jsonPath;
   return null;
 }
 
 function findConfigPathInDirs(
   configDirs: string[],
-  baseName: string,
+  preferredBaseName: string,
+  legacyBaseName: string,
 ): string | null {
   for (const configDir of configDirs) {
-    const configPath = findConfigPath(path.join(configDir, baseName));
-    if (configPath) {
-      return configPath;
+    const preferredPath = findConfigPath(
+      path.join(configDir, preferredBaseName),
+    );
+    if (preferredPath) {
+      return preferredPath;
+    }
+
+    const legacyPath = findConfigPath(path.join(configDir, legacyBaseName));
+    if (legacyPath) {
+      return legacyPath;
     }
   }
 
@@ -123,9 +128,11 @@ function deepMerge<T extends Record<string, unknown>>(
  * Load plugin configuration from user and project config files, merging them appropriately.
  *
  * Configuration is loaded from two locations:
- * 1. User config: $OPENCODE_CONFIG_DIR/oh-my-opencode-slim.jsonc or .json,
- *    or ~/.config/opencode/oh-my-opencode-slim.jsonc or .json (or $XDG_CONFIG_HOME)
- * 2. Project config: <directory>/.opencode/oh-my-opencode-slim.jsonc or .json
+ * 1. User config: $OPENCODE_CONFIG_DIR/oh-my-oc.jsonc or .json,
+ *    or ~/.config/opencode/oh-my-oc.jsonc or .json (or $XDG_CONFIG_HOME),
+ *    falling back to oh-my-opencode-slim.jsonc or .json
+ * 2. Project config: <directory>/.opencode/oh-my-oc.jsonc or .json,
+ *    falling back to oh-my-opencode-slim.jsonc or .json
  *
  * JSONC format is preferred over JSON (allows comments and trailing commas).
  * Project config takes precedence over user config. Nested objects are
@@ -137,17 +144,25 @@ function deepMerge<T extends Record<string, unknown>>(
 export function loadPluginConfig(directory: string): PluginConfig {
   const userConfigPath = findConfigPathInDirs(
     getConfigSearchDirs(),
-    'oh-my-opencode-slim',
+    PREFERRED_CONFIG_BASE_NAME,
+    LEGACY_CONFIG_BASE_NAME,
   );
 
   const projectConfigBasePath = path.join(
     directory,
     '.opencode',
-    'oh-my-opencode-slim',
+    PREFERRED_CONFIG_BASE_NAME,
+  );
+  const legacyProjectConfigBasePath = path.join(
+    directory,
+    '.opencode',
+    LEGACY_CONFIG_BASE_NAME,
   );
 
   // Find existing config files (preferring .jsonc over .json)
-  const projectConfigPath = findConfigPath(projectConfigBasePath);
+  const projectConfigPath =
+    findConfigPath(projectConfigBasePath) ??
+    findConfigPath(legacyProjectConfigBasePath);
 
   let config: PluginConfig = userConfigPath
     ? (loadConfigFromPath(userConfigPath) ?? {})

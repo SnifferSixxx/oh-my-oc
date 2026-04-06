@@ -55,7 +55,7 @@ User prompt
 
 ### Step 1: Add Council Configuration
 
-Edit `~/.config/opencode/oh-my-opencode-slim.json` (or `.jsonc`):
+Edit `~/.config/opencode/oh-my-oc.json` (or `.jsonc`):
 
 ```jsonc
 {
@@ -90,7 +90,7 @@ That's it — the council runs, synthesises, and returns one answer.
 
 ### Council Settings
 
-Configure in `~/.config/opencode/oh-my-opencode-slim.json` (or `.jsonc`):
+Configure in `~/.config/opencode/oh-my-oc.json` (or `.jsonc`):
 
 ```jsonc
 {
@@ -477,7 +477,7 @@ When not configured, the master uses a single model with no fallback.
 **Solutions:**
 1. Verify `council` is configured in your plugin config:
    ```bash
-   cat ~/.config/opencode/oh-my-opencode-slim.json | grep -A 5 '"council"'
+   cat ~/.config/opencode/oh-my-oc.json | grep -A 5 '"council"'
    ```
 2. Ensure `master.model` and at least one preset with one councillor are defined
 3. Restart OpenCode after config changes

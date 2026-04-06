@@ -50,6 +50,32 @@ describe('loadPluginConfig', () => {
     expect(config.agents?.oracle?.model).toBe('test/model');
   });
 
+  test('prefers oh-my-oc config over legacy oh-my-opencode-slim config', () => {
+    const projectDir = path.join(tempDir, 'project');
+    const projectConfigDir = path.join(projectDir, '.opencode');
+    fs.mkdirSync(projectConfigDir, { recursive: true });
+
+    fs.writeFileSync(
+      path.join(projectConfigDir, 'oh-my-opencode-slim.json'),
+      JSON.stringify({
+        agents: {
+          oracle: { model: 'legacy/model' },
+        },
+      }),
+    );
+    fs.writeFileSync(
+      path.join(projectConfigDir, 'oh-my-oc.json'),
+      JSON.stringify({
+        agents: {
+          oracle: { model: 'preferred/model' },
+        },
+      }),
+    );
+
+    const config = loadPluginConfig(projectDir);
+    expect(config.agents?.oracle?.model).toBe('preferred/model');
+  });
+
   test('loads scoringEngineVersion flag when configured', () => {
     const projectDir = path.join(tempDir, 'project');
     const projectConfigDir = path.join(projectDir, '.opencode');

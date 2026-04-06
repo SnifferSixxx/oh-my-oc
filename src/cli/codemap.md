@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-The `src/cli/` directory provides the command-line interface for installing and configuring **oh-my-opencode-slim**, an OpenCode plugin. It handles:
+The `src/cli/` directory provides the command-line interface for installing and configuring **oh-my-oc**, an OpenCode plugin. It handles:
 
 - **Installation orchestration**: Interactive (TUI) and non-interactive (`--no-tui`) installation flows
 - **Configuration management**: Reading, parsing (JSONC support), and writing OpenCode configuration files with atomic writes
@@ -249,7 +249,7 @@ detectCurrentConfig() [config-io.ts]
                   │
                   ▼
 ┌─────────────────────────────────────────┐
-│ Parse oh-my-opencode-slim.json/jsonc   │
+│ Parse oh-my-oc.json/jsonc              │
 │ - Extract preset name                   │
 │ - Check agent models for providers     │
 │ - Check multiplexer.type                │
@@ -335,7 +335,7 @@ skills.ts
 |------|----------|---------|
 | `opencode.json` | `~/.config/opencode/` | Main OpenCode config |
 | `opencode.jsonc` | `~/.config/opencode/` | Main config with comments |
-| `oh-my-opencode-slim.json` | `~/.config/opencode/` | Plugin-specific lite config |
+| `oh-my-oc.json` | `~/.config/opencode/` | Plugin-specific lite config |
 
 ### Supported Providers (MODEL_MAPPINGS)
 

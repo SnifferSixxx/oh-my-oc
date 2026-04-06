@@ -92,14 +92,12 @@ describe('paths', () => {
 
   test('getLiteConfig() returns correct path', () => {
     process.env.XDG_CONFIG_HOME = '/tmp/xdg-config';
-    expect(getLiteConfig()).toBe(
-      '/tmp/xdg-config/opencode/oh-my-opencode-slim.json',
-    );
+    expect(getLiteConfig()).toBe('/tmp/xdg-config/opencode/oh-my-oc.json');
   });
 
   test('getLiteConfig() respects OPENCODE_CONFIG_DIR', () => {
     process.env.OPENCODE_CONFIG_DIR = '/custom/directory';
-    expect(getLiteConfig()).toBe('/custom/directory/oh-my-opencode-slim.json');
+    expect(getLiteConfig()).toBe('/custom/directory/oh-my-oc.json');
   });
 
   describe('getExistingConfigPath()', () => {
@@ -170,6 +168,34 @@ describe('paths', () => {
       writeFileSync(jsoncPath, '{}');
 
       expect(getExistingLiteConfigPath()).toBe(jsoncPath);
+    });
+
+    test('prefers new lite config over legacy when both exist', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'opencode-lite-test-'));
+      process.env.XDG_CONFIG_HOME = tmpDir;
+
+      const configDir = join(tmpDir, 'opencode');
+      ensureConfigDir();
+
+      const legacyJsonPath = join(configDir, 'oh-my-opencode-slim.json');
+      const newJsonPath = join(configDir, 'oh-my-oc.json');
+      writeFileSync(legacyJsonPath, '{}');
+      writeFileSync(newJsonPath, '{}');
+
+      expect(getExistingLiteConfigPath()).toBe(newJsonPath);
+    });
+
+    test('falls back to legacy lite config when new file is missing', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'opencode-lite-test-'));
+      process.env.XDG_CONFIG_HOME = tmpDir;
+
+      const configDir = join(tmpDir, 'opencode');
+      ensureConfigDir();
+
+      const legacyJsoncPath = join(configDir, 'oh-my-opencode-slim.jsonc');
+      writeFileSync(legacyJsoncPath, '{}');
+
+      expect(getExistingLiteConfigPath()).toBe(legacyJsoncPath);
     });
   });
 

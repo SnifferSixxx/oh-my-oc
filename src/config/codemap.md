@@ -13,8 +13,8 @@ The `src/config/` module is responsible for:
 ### Key Patterns
 
 **Multi-Source Configuration Merging**
-- User config: `~/.config/opencode/oh-my-opencode-slim.jsonc` (preferred) or `.json`
-- Project config: `<directory>/.opencode/oh-my-opencode-slim.jsonc` (preferred) or `.json`
+- User config: `~/.config/opencode/oh-my-oc.jsonc` (preferred) or `.json`
+- Project config: `<directory>/.opencode/oh-my-oc.jsonc` (preferred) or `.json`
 - Environment override: `OH_MY_OPENCODE_SLIM_PRESET`
 - Project config takes precedence over user config
 - Nested objects (`agents`, `multiplexer`, `fallback`) are deep-merged; arrays and primitives are replaced
@@ -95,7 +95,7 @@ FailoverConfig
 loadPluginConfig(directory)
 │
 ├─→ Find user config path
-│   └─→ findConfigPath(~/.config/opencode/oh-my-opencode-slim)
+│   └─→ findConfigPath(~/.config/opencode/oh-my-oc)
 │       └─→ Prefers .jsonc over .json
 │
 ├─→ Load user config with loadConfigFromPath()
@@ -104,7 +104,7 @@ loadPluginConfig(directory)
 │       └─→ Returns null if invalid/missing
 │
 ├─→ Find project config path
-│   └─→ findConfigPath(<directory>/.opencode/oh-my-opencode-slim)
+│   └─→ findConfigPath(<directory>/.opencode/oh-my-oc)
 │
 ├─→ Load project config (same validation)
 │

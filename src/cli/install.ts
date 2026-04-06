@@ -35,9 +35,7 @@ const SYMBOLS = {
 
 function printHeader(isUpdate: boolean): void {
   console.log();
-  console.log(
-    `${BOLD}oh-my-opencode-slim ${isUpdate ? 'Update' : 'Install'}${RESET}`,
-  );
+  console.log(`${BOLD}oh-my-oc ${isUpdate ? 'Update' : 'Install'}${RESET}`);
   console.log('='.repeat(30));
   console.log();
 }
@@ -148,7 +146,7 @@ async function runInstall(config: InstallConfig): Promise<number> {
     if (!handleStepResult(agentResult, 'Default agents disabled')) return 1;
   }
 
-  printStep(step++, totalSteps, 'Writing oh-my-opencode-slim configuration...');
+  printStep(step++, totalSteps, 'Writing oh-my-oc configuration...');
   if (config.dryRun) {
     const liteConfig = generateLiteConfig(config);
     printInfo('Dry run mode - configuration that would be written:');

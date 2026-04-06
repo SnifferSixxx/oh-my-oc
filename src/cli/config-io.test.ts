@@ -121,7 +121,7 @@ describe('config-io', () => {
   });
 
   test('writeLiteConfig writes lite config with OpenAI preset', () => {
-    const litePath = join(tmpDir, 'opencode', 'oh-my-opencode-slim.json');
+    const litePath = join(tmpDir, 'opencode', 'oh-my-oc.json');
     paths.ensureConfigDir();
 
     const result = writeLiteConfig({
@@ -153,7 +153,7 @@ describe('config-io', () => {
 
   test('detectCurrentConfig detects installed status', () => {
     const configPath = join(tmpDir, 'opencode', 'opencode.json');
-    const litePath = join(tmpDir, 'opencode', 'oh-my-opencode-slim.json');
+    const litePath = join(tmpDir, 'opencode', 'oh-my-oc.json');
     paths.ensureConfigDir();
 
     writeFileSync(

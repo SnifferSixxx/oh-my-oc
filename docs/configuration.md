@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Complete reference for all configuration files and options in oh-my-opencode-slim.
+Complete reference for all configuration files and options in oh-my-oc.
 
 ---
 
@@ -9,11 +9,11 @@ Complete reference for all configuration files and options in oh-my-opencode-sli
 | File | Purpose |
 |------|---------|
 | `~/.config/opencode/opencode.json` | OpenCode core settings (plugin registration, providers) |
-| `~/.config/opencode/oh-my-opencode-slim.json` | Plugin settings — agents, multiplexer, MCPs, council |
-| `~/.config/opencode/oh-my-opencode-slim.jsonc` | Same, but with JSONC (comments + trailing commas). Takes precedence over `.json` if both exist |
-| `.opencode/oh-my-opencode-slim.json` | Project-local overrides (optional, checked first) |
+| `~/.config/opencode/oh-my-oc.json` | Plugin settings — agents, multiplexer, MCPs, council |
+| `~/.config/opencode/oh-my-oc.jsonc` | Same, but with JSONC (comments + trailing commas). Takes precedence over `.json` if both exist |
+| `.opencode/oh-my-oc.json` | Project-local overrides (optional, checked first) |
 
-> **💡 JSONC recommended:** Use the `.jsonc` extension to add comments and trailing commas. If both `.jsonc` and `.json` exist, `.jsonc` takes precedence.
+> **💡 JSONC recommended:** Use the `.jsonc` extension to add comments and trailing commas. If both `.jsonc` and `.json` exist, `.jsonc` takes precedence. Legacy config files are still read if the new files are absent.
 
 ---
 

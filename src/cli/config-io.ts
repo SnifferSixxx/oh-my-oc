@@ -10,6 +10,7 @@ import {
   ensureConfigDir,
   ensureOpenCodeConfigDir,
   getExistingConfigPath,
+  getExistingLiteConfigPath,
   getLiteConfig,
 } from './paths';
 import { generateLiteConfig } from './providers';
@@ -251,7 +252,7 @@ export function detectCurrentConfig(): DetectedConfig {
   if (providers?.google) result.hasAntigravity = true;
 
   // Try to detect from lite config
-  const { config: liteConfig } = parseConfig(getLiteConfig());
+  const { config: liteConfig } = parseConfig(getExistingLiteConfigPath());
   if (liteConfig && typeof liteConfig === 'object') {
     const configObj = liteConfig as Record<string, unknown>;
     const presetName = configObj.preset as string;
